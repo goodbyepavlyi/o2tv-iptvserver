@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  o2tv-iptvserver:
+    container_name: "o2tv-iptvserver"
+    image: "goodbyepavlyi/o2tv-iptvserver:latest"
+    environment:
+      # ⚠️ Required:
+      # Change this to your host's public address
+      URL: "http://<IP_ADDRESS>:<PORT>"
+      # Enter your O2 TV credentials
+      O2TV_EMAIL: "example@gmail.com"
+      O2TV_PASSWORD: "changeme"
+
+      # Optional
+      # PORT: "8649"
+      # CONFIG_PATH: "/config/config.conf"
+    volumes:
+      - "./o2tv-iptvserver:/config"
+    ports:
+      - "8649:8649"
+    restart: "unless-stopped"
