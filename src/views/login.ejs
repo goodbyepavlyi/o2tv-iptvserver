@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O2 TV IPTV Server</title>
+    <link href="/public/css/app.css" rel="stylesheet">
+</head>
+
+<body class="bg-neutral-900 text-white">
+    <main class="container mx-auto mt-4 p-4">
+        <h1 class="text-4xl font-bold mb-6">O2 TV Login</h1>
+        <form data-setupForm class="max-w-md">
+            <div class="mb-4">
+                <label for="username" class="block text-lg mb-2">Username</label>
+                <input data-setupForm-username type="text" name="username" required
+                    class="w-full bg-neutral-800 text-white py-2 px-4 rounded">
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="block text-lg mb-2">Password</label>
+                <input data-setupForm-password type="password" name="password" required
+                    class="w-full bg-neutral-800 text-white py-2 px-4 rounded">
+            </div>
+            
+            <p data-userNotifyText class="text-sm font-semibold hidden"></p>
+            
+            <button type="submit"
+                class="my-4 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded">Continue</button>
+        </form>
+    </main>
+
+    <script src="/public/lib/js/jquery-3.7.0.min.js"></script>
+    <script src="/public/js/app.js"></script>
+    <script>
+        const setupForm = $("[data-setupForm]");
+        const usernameField = $("[data-setupForm-username]");
+        const passwordField = $("[data-setupForm-password]");
+
+        setupForm.on("submit", (event) => {
+            event.preventDefault();
+
+            const username = usernameField.val();
+            const password = passwordField.val();
+
+            apiRequest({
+                method: "POST", 
+                url: "/api/o2tv/login", 
+                body: {
+                    username, 
+                    password, 
+                },
+            }, (error, data) => {
+                if (error) {
+                    displayError(error);
+                    return;
+                }
+
+                if (data.code == 200) {
+                    window.location.href = "/";
+                    return;
+                }
+                
+                if (data.message) {
+                    displayMessage(data.message);
+                    return;
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

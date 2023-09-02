@@ -5,18 +5,16 @@ services:
     container_name: "o2tv-iptvserver"
     image: "goodbyepavlyi/o2tv-iptvserver:latest"
     environment:
-      # ⚠️ Required:
-      # Change this to your host's public address
-      URL: "http://<IP_ADDRESS>:<PORT>"
-      # Enter your O2 TV credentials
-      O2TV_EMAIL: "example@gmail.com"
-      O2TV_PASSWORD: "changeme"
+      - WEBSERVER_PUBLICURL=http://<IP_ADDRESS>:<PORT>
 
       # Optional
-      # PORT: "8649"
-      # CONFIG_PATH: "/config/config.conf"
+      # - WEBSERVER_LISTENADDRESS=0.0.0.0
+      # - WEBSERVER_PORT=3000
+      # - O2TV_USERNAME=example@example.com
+      # - O2TV_PASSWORD=example
+      # - O2TV_DEVICEID=example
     volumes:
-      - "./o2tv-iptvserver:/config"
+      - "./o2tv-iptvserver:/data"
     ports:
-      - "8649:8649"
+      - "3000:3000"
     restart: "unless-stopped"

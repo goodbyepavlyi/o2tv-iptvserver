@@ -1,47 +1,81 @@
-const debug = require('debug')('WebServer');
-const path = require('path');
-const express = require('express');
-const Util = require('./Util');
-const { PORT, URL } = require('../../config');
+const express = require("express");
+const path = require("path");
+const { walkFs } = require("../utils/FileHelper");
+const Application = require("../Application");
+const LogHandler = require("./handlers/LogHandler");
+const ErrorHandler = require("./handlers/ErrorHandler");
 
 module.exports = class WebServer {
-    constructor(o2tv) {
-        this.o2tv = o2tv;
+    /**
+     * 
+     * @param {Application} application 
+     */
+    constructor(application) {
+        this.application = application;
+        this.express = express();
+    }
 
-        this.app = express()
-            .disable('etag')
-            .use(express.static(path.join(__dirname, '..', '..', 'www')))
-            .use(express.json())
+    getExpress() {
+        return this.express;
+    }
+    
+    getServer() {
+        return this.server;
+    }
 
-            .get('/api/playlist', Util.promisify(async (req, res) => {
-                const url = req.query.url || URL;
-                let result = '';
-                for (const [x, y] of Object.entries(this.o2tv.channels))
-                    result += `#EXTINF:-1 provider="O2 TV" tvg-logo="${y.image}" catchup="append" catchup-source="?utc={utc}&utcend={utcend}",${y.name.replace(' HD', '')}\n#KODIPROP:inputstream=inputstream.adaptive\n#KODIPROP:inputstream.adaptive.manifest_type=hls\n#KODIPROP:mimetype=application/x-mpegURL\n${url}/api/channel/${encodeURI(x.replace('/', '|'))}.m3u8\n`
+    async start() {
+        this.application.getConsoleLog().info("WebServer", "Starting Web Server..");
+    
+        this.express.set("trust proxy", 1);
+        this.express.set("view engine", "ejs");
+        this.express.set("views", path.resolve(__dirname, "../../views"));
+        
+        this.express.use(express.json())
+        this.express.use("/favicon.ico", express.static(path.resolve(__dirname, "../../public/favicon.ico")))
+        this.express.use("/public", express.static(path.resolve(__dirname, "../../public")))
 
-                if (result !== '')
-                    result = `#EXTM3U\n${result}`;
+        const logHandler = new LogHandler(this.application);
+        this.express.use(logHandler.logRoute.bind(logHandler));
 
-                res.header('Content-Disposition', 'attachment; filename="playlist.m3u8"');
-                res.header('Content-Type', 'text/plain; charset=UTF-8');
-                res.send(result);
-            }))
+        await this.registerRoutes();
 
-            .get('/api/channels', Util.promisify(async (req, res) => {
-                res.send(this.o2tv.channels);
-            }))
+        const errorHandler = new ErrorHandler(this.application);
+        this.express.use(errorHandler.handle404Error.bind(errorHandler));
+        this.express.use(errorHandler.handleServerErrors.bind(errorHandler));
 
-            .get('/api/channel/:id', Util.promisify(async (req, res) => {
-                const channelId = decodeURIComponent(req.params.id).replace("|", "/");
+        this.listen();
+    }
 
-                const stream = (req.query['end']) ? await this.o2tv.getCatchup(channelId, req.query['utc'], req.query['utcend'] || '') : await this.o2tv.getStream(channelId);
-                
-                res.header('Content-Type', 'application/x-mpegURL');
-                return res.redirect(stream);
-            }))
+    async registerRoutes() {
+        this.application.getConsoleLog().info("WebServer", "Registering routes..");
 
-            .listen(PORT, () => {
-                debug(`Listening on http://0.0.0.0:${PORT}`);
+        const files = walkFs(path.resolve(__dirname, "../../routes")).filter(file => file.endsWith(".js"));
+        for (const fileName of files) {
+            const route = new (require(fileName))(this.application);
+            
+            try {
+                await route.setup(this.express);
+                this.application.getConsoleLog().debug("WebServer", `Route ${route.url} registered successfully.`);
+            } catch (error) {
+                this.application.getConsoleLog().error("WebServer", `Failed to register route ${route.url}. Error: ${error.message}`);
+            }
+        };
+
+        this.application.getConsoleLog().success("WebServer", "Routes registered successfully.");
+    }
+
+    listen() {
+        const listenAddress = this.application.getConfig().WebServer_ListenAddress;
+        const port = this.application.getConfig().WebServer_Port;
+
+        try {
+            this.server = this.express.listen(port, listenAddress, () => {
+                this.application.getConsoleLog().success("WebServer", `Web Server is listening on ${listenAddress}:${port}`);
+            }).on("error", (error) => {
+                this.application.getConsoleLog().error("WebServer", `Failed to start the Web Server. Error: ${error.message}`);
             });
+        } catch (error) {
+            this.application.getConsoleLog().error("WebServer", `Failed to start the Web Server. Error: ${error.message}`);
+        }
     }
 }

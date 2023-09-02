@@ -1,6 +1,6 @@
 # O2 TV IPTV Server
 
-[![Build & Publish Docker Image to Docker Hub](https://github.com/goodbyepavlyi/o2tv-iptvserver/actions/workflows/docker-image.yml/badge.svg?branch=production)](https://github.com/goodbyepavlyi/o2tv-iptvserver/actions/workflows/docker-image.yml)
+[![Build & Publish Docker Image to Docker Hub](https://github.com/goodbyepavlyi/o2tv-iptvserver/actions/workflows/docker-image.yml/badge.svg)](https://github.com/goodbyepavlyi/o2tv-iptvserver/actions/workflows/docker-image.yml)
 [![Docker](https://img.shields.io/docker/v/goodbyepavlyi/o2tv-iptvserver/latest)](https://hub.docker.com/r/goodbyepavlyi/o2tv-iptvserver)
 [![Docker](https://img.shields.io/docker/pulls/goodbyepavlyi/o2tv-iptvserver.svg)](https://hub.docker.com/r/goodbyepavlyi/o2tv-iptvserver)
 ![GitHub Stars](https://img.shields.io/github/stars/goodbyepavlyi/o2tv-iptvserver)
@@ -9,41 +9,30 @@
   <img src="./assets/ui.png" width="802" />
 </p>
 
-## Requirements
-
-* A host with Docker installed.
-
 ## Installation
 
-### 1. Install Docker
+To automatically install & run the container, simply download the [docker-compose.yml]([https://github.](https://github.com/goodbyepavlyi/o2tv-iptvserver/blob/master/docker-compose.yml)) and run `docker-compose up -d`
 
-### 2. Run the container
+> You have to replace the WEBSERVER_PUBLICURL variable.
 
-To automatically install & run the container, simply download the docker-compose.yml and run `docker-compose up -d`
+## Update
 
-<pre>
-version: "3.8"
+To keep your O2 TV IPTV Server up to date, follow these steps:
 
-services:
-  o2tv-iptvserver:
-    container_name: "o2tv-iptvserver"
-    image: "goodbyepavlyi/o2tv-iptvserver:latest"
-    environment:
-      # ⚠️ Required:
-      # Change this to your host's public address
-      URL: "http://<IP_ADDRESS>:<PORT>"
-      # Enter your O2 TV credentials
-      O2TV_EMAIL: "example@gmail.com"
-      O2TV_PASSWORD: "changeme"
+#### 1. Pull the Latest Docker Image
 
-      # Optional
-      # PORT: "8649"
-      # CONFIG_PATH: "/config/config.conf"
-    volumes:
-      - "./o2tv-iptvserver:/config"
-    ports:
-      - "8649:8649"
-    restart: "unless-stopped"
-</pre>
+```bash
+docker-compose pull
+```
 
-> You have to replace the URL, O2TV_EMAIL, O2TV_PASSWORD variables.
+This command will fetch the latest version of the O2 TV IPTV Server Docker image from the Docker Hub.
+
+
+#### 2. Restart the Container
+```
+docker-compose up -d
+```
+
+By running this command, you'll restart the O2 TV IPTV Server container with the latest image. Your server will now be running the most recent version.
+
+That's it! Your O2 TV IPTV Server is now updated and ready to go. Enjoy the latest features and improvements.

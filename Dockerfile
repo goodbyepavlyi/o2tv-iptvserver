@@ -1,15 +1,18 @@
-FROM node:19-alpine
+FROM node:18-alpine
 
-# Copy application
-COPY src/ /app
 WORKDIR /app
+
+# Copy the package.json and package-lock.json
+COPY src/package*.json ./
+
+# Install npm dependencies
 RUN npm ci --omit=dev
 
+# Copy the application
+COPY src/ /app
+
 # Expose ports
-EXPOSE 8649
+EXPOSE 3000
 
-# Set Environment
-ENV DEBUG=WebServer,O2TV,Config
-
-# Run Web UI
-CMD ["node", "server.js"]
+# Run application
+CMD ["node", "index.js"]

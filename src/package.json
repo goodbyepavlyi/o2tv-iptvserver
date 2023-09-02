@@ -1,20 +1,27 @@
 {
-  "release": 1,
-  "name": "o2tv-iptvserver",
-  "version": "1.0.0",
-  "description": "",
-  "main": "server.js",
-  "author": "goodbyepavlyi",
-  "license": "GPL",
-  "dependencies": {
-    "axios": "^1.3.4",
-    "debug": "^4.3.4",
-    "express": "^4.18.2",
-    "path": "^0.12.7"
-  },
-  "nodemonConfig": {
-    "ignore": [
-      "www/*"
-    ]
-  }
+    "name": "o2tv-iptvserver",
+    "version": "2.0.0",
+    "description": "",
+    "author": "goodbyepavlyi",
+    "license": "MIT",
+    "scripts": {
+        "start": "node index.js",
+        "build:css": "npx tailwindcss --watch -i public/css/build.css -o public/css/app.css"
+    },
+    "dependencies": {
+        "axios": "^1.3.4",
+        "chalk": "^4.1.2",
+        "ejs": "^3.1.9",
+        "express": "^4.18.2",
+        "xml2js": "^0.6.2"
+    },
+    "devDependencies": {
+        "tailwindcss": "^3.3.3",
+        "autoprefixer": "^10.4.14"
+    },
+    "nodemonConfig": {
+        "ignore": [
+            "www/*"
+        ]
+    }
 }

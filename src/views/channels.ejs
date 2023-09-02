@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O2 TV IPTV Server</title>
+    <link href="/public/css/app.css" rel="stylesheet">
+</head>
+
+<body class="flex flex-col min-h-screen bg-neutral-100 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
+    <%- include("partials/navbar.ejs") %>
+
+    <main class="container mx-auto mt-4 p-4 flex-grow">
+        <%- include("partials/updater.ejs") %>
+
+        <p data-userNotifyText class="text-sm font-semibold hidden"></p>
+
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-semibold mb-4">Channels</h1>
+            <a data-download class="bg-indigo-500 hover:bg-indigo-600 text-neutral-100 font-bold py-2 px-4 rounded">Download Playlist</a>
+        </div>
+        
+        <div data-channels class="flex grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 my-4"></div>
+    </main>
+
+    <%- include("partials/footer.ejs") %>
+
+    <script src="/public/lib/js/jquery-3.7.0.min.js"></script>
+    <script src="/public/js/app.js"></script>
+    <script>
+        const playlistDownload = $("[data-download]");
+        const channels = $("[data-channels]");
+        
+        playlistDownload.on("click", (event) => {
+            event.preventDefault();
+            window.location.href = `/api/o2tv/playlist`;
+        });
+        
+        function displayChannel(id, name, logo) {
+            const element = $("<div>").addClass("flex flex-col justify-center items-center").attr("data-channel", id);
+            const logoElement = $("<img>").addClass("h-12 w-auto cursor-pointer").attr("src", logo);
+            const nameElement = $("<h2>").addClass("text-lg font-semibold mb-2 cursor-pointer").text(name);
+
+            return element.append(logoElement, nameElement);
+        }
+
+        function initChannels() {
+            const channel = $("[data-channel]");
+
+            channel.on("click", function() {
+                const id = $(this).data("channel");
+                window.location.href = `/api/o2tv/playlist?id=${id}`;
+                return;
+            });
+        }
+
+        apiRequest({
+            method: "GET", 
+            url: "/api/o2tv/channels",
+        }, (error, data) => {
+            if (error) {
+                displayError(error);
+                return;
+            }
+
+            if (data.code == 200) {
+                $.each(data.channels, (id, channelData) => {
+                    const { name, logo } = channelData;
+                    
+                    const channelElement = displayChannel(id, name, logo);
+                    channels.append(channelElement);
+                });
+
+                initChannels();
+                return;
+            }
+            
+            if (data.message) {
+                displayMessage(data.message);
+                return;
+            }
+        });
+    </script>
+</body>
+
+</html>

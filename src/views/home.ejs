@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O2 TV IPTV Server</title>
+    <link href="/public/css/app.css" rel="stylesheet">
+</head>
+
+<body class="flex flex-col min-h-screen bg-neutral-100 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
+    <%- include("partials/navbar.ejs") %>
+    
+    <main class="container mx-auto mt-4 p-4 flex-grow">
+        <p data-userNotifyText class="text-sm font-semibold hidden"></p>
+        <%- include("partials/updater.ejs") %>
+
+        <h1 class="text-2xl font-semibold mb-4">Welcome to O2 TV IPTV Server</h1>
+        <p>Choose from the navigation links above to perform the desired action.</p>
+    </main>
+
+    <%- include("partials/footer.ejs") %>
+
+    <script src="/public/lib/js/jquery-3.7.0.min.js"></script>
+    <script src="/public/js/app.js"></script>
+</body>
+
+</html>
