@@ -1,9 +1,10 @@
 const fs = require("fs");
+const path = require("path");
 const { version } = require("../../package.json");
 
 module.exports = class Config {
     constructor() {
-        this.configPath = "/data/config.json";
+        this.configPath = this.EnvironmentInProduction ? "/data/config.json" : path.join(__dirname, "../../config.json");
         
         this.load();
     }
@@ -33,6 +34,14 @@ module.exports = class Config {
                 deviceId: null, 
             }, 
         };
+    }
+
+    get Environment() {
+        return process.env.NODE_ENV || "PRODUCTION";
+    }
+
+    get EnvironmentInProduction() {
+        return this.Environment == "PRODUCTION";
     }
 
     get Version() {
