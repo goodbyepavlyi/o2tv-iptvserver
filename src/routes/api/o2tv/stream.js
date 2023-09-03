@@ -12,8 +12,6 @@ module.exports = class {
     constructor(application) {
         this.application = application;
         this.url = WebRoute.ApiO2TVStream;
-
-        this.cache = {};
     }
 
     /**
@@ -28,19 +26,9 @@ module.exports = class {
                 if (!id) 
                     return ApiResponse.MalformedRequest.send(res);
                 
-                if (this.cache[id]) {
-                    const { url, mpd } = this.cache[id];
-                    
-                    const keepAliveUrl = this.application.getO2TV().getStream().getKeepaliveURL(url, mpd);
-                    const streamXml = await this.fetchMPD(keepAliveUrl);
-
-                    res.set('Content-Type', 'application/dash+xml').send(streamXml);
-                    return;
-                }
-                
                 await this.application.getO2TV().getStream().playLive(id)
                     .then(async (streamUrl) => {
-                        const streamXml = await this.fetchMPD(id, streamUrl);
+                        const streamXml = await this.fetchMPD(streamUrl);
                         res.set('Content-Type', 'application/dash+xml').send(streamXml);
                     });
             } catch (error) {
@@ -61,7 +49,7 @@ module.exports = class {
         });
     }
 
-    async fetchMPD(streamId, streamUrl) {
+    async fetchMPD(streamUrl) {
         const response = await fetch(streamUrl);
         if (!response.ok) 
             return;
@@ -71,12 +59,6 @@ module.exports = class {
         const newBaseURL = streamUrlParts[0];
         
         const mpdXml = mpdContent.replace(/<BaseURL>.*<\/BaseURL>/, `<BaseURL>${newBaseURL}/</BaseURL>`);
-
-        this.cache[streamUrl] = {
-            url: response.url,
-            mpd: mpdXml,
-        };
-
         return mpdXml;
     }
 };
