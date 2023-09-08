@@ -103,6 +103,8 @@ function displayError(error, hideTimeout) {
     if (!error)
         return;
 
+    console.error(error);
+
     const userNotifyElement = $("[data-userNotifyText]");
     let message = "An unexpected error occurred. If the problem persists, review the application logs.";
 
