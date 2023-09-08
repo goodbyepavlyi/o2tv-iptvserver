@@ -50,7 +50,7 @@ module.exports = class O2TVApi {
         }
     }
 
-    async callList(options) {
+    async callList(post) {
         let result = [];
         let fetch = true;
 
@@ -58,28 +58,28 @@ module.exports = class O2TVApi {
             const data = await this.call({
                 url: `https://${this.o2tv.getPartnerId()}.frp1.ott.kaltura.com/api_v3/service/asset/action/list?format=1&clientTag=${this.o2tv.getClientTag()}`, 
                 method: "POST", 
-                data: options.data, 
+                data: post, 
                 headers: this.o2tv.getApi().getHeaders(), 
             });
 
             if (data.err || data.error || !data.result || !data.result.hasOwnProperty('totalCount')) {
                 fetch = false;
-                throw new O2TVApiError("Failed to fetch data from O2 TV", data);
+                throw new O2TVApiError(`Failed to fetch data from O2 TV. Error: ${JSON.stringify(data)}`, data);
             }
 
             const totalCount = data.result.totalCount;
-            if (totalCount < 0) 
-                fetch = false;
+            if (totalCount <= 0) 
+                return fetch = false;
             
             for (const object of data.result.objects) 
                 result.push(object);
-        
+    
             if (totalCount == result.length) 
                 fetch = false;
 
-            let pager = options.data["pager"];
+            let pager = post["pager"];
             pager["pageIndex"] =+ 1;
-            options.data["pager"] = pager;
+            post["pager"] = pager;
         }
 
         return result;
