@@ -34,8 +34,8 @@ module.exports = class Application {
         return new Promise(async (resolve, reject) => {
             let launchTime = Date.now();
 
+            await this.o2tv.load();
             await this.webServer.start();
-            await this.o2tv.getSession().loadSession();
             this.consoleLog.info("Application", `Started in ${(Date.now() - launchTime) / 1000}ms`);
         });
     }

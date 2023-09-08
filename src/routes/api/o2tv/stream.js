@@ -1,5 +1,6 @@
 const Application = require("../../../lib/Application");
 const { O2TVAuthenticationError, O2TVApiError } = require("../../../lib/o2tv/O2TVErrors");
+const O2TVMPD = require("../../../lib/o2tv/O2TVMPD");
 const ApiResponse = require("../../../lib/webserver/ApiResponse");
 const WebRoute = require("../../../lib/webserver/WebRoute");
 
@@ -22,14 +23,17 @@ module.exports = class {
     async setup(express) {
         express.get(this.url, async (req, res) => {
             try {
-                const { id } = req.query;
+                const { id, md } = req.query;
                 if (!id) 
                     return ApiResponse.MalformedRequest.send(res);
                 
-                await this.application.getO2TV().getStream().playLive(id)
+                await this.application.getO2TV().getStream().playLive(id, md)
                     .then(async (streamUrl) => {
-                        const streamXml = await this.fetchMPD(streamUrl);
-                        res.set('Content-Type', 'application/dash+xml').send(streamXml);
+                        const mpd = new O2TVMPD(streamUrl);
+                        const streamXML = await mpd.getXML();
+
+                        res.set('Content-Type', 'application/dash+xml')
+                            .send(streamXML);
                     });
             } catch (error) {
                 let response;
@@ -47,18 +51,5 @@ module.exports = class {
                 response.send(res);
             }
         });
-    }
-
-    async fetchMPD(streamUrl) {
-        const response = await fetch(streamUrl);
-        if (!response.ok) 
-            return;
-
-        const mpdContent = await response.text();
-        const streamUrlParts = streamUrl.split('/manifest.mpd');
-        const newBaseURL = streamUrlParts[0];
-        
-        const mpdXml = mpdContent.replace(/<BaseURL>.*<\/BaseURL>/, `<BaseURL>${newBaseURL}/</BaseURL>`);
-        return mpdXml;
     }
 };

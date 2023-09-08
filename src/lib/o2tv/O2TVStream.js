@@ -1,4 +1,3 @@
-const { parseString } = require('xml2js');
 const O2TV = require("./O2TV");
 const { O2TVApiError } = require("./O2TVErrors");
 
@@ -22,7 +21,7 @@ module.exports = class O2TVStream {
         });
         
         if (data.err || !data.result || data.result.length == 0 || !data.result[1].sources)
-            throw new O2TVApiError("An error occurred while attempting to stream", data);
+            throw new O2TVApiError(`An error occurred while attempting to stream: ${JSON.stringify(data)}`, data);
 
         if (data.result[1].messages && data.result[1].messages.length > 0 && data.result[1].messages[0].code == "ConcurrencyLimitation") 
             throw new O2TVApiError("Playback limit exceeded", data);
@@ -59,7 +58,45 @@ module.exports = class O2TVStream {
         throw new O2TVApiError("Unknown error occurred", data);
     }
 
-    playLive(id) {
+    async playLive(id, md) {
+        const liveEpg = await this.o2tv.getEpg().getLiveEpg();
+        const epg = liveEpg[id];
+
+        if (!epg) 
+            throw new O2TVApiError('Unknown error occurred', epg);
+        
+        // Multi dimension stream
+        if (md && epg.md) {
+            return this.playStream({
+                data: {
+                    1: {
+                        service: "asset", 
+                        action: "get", 
+                        id: md, 
+                        assetReferenceType: "epg_internal", 
+                        ks: this.o2tv.getSession().getKS(), 
+                    },
+                    2: {
+                        service: "asset", 
+                        action: "getPlaybackContext", 
+                        assetId: md, 
+                        assetType: "epg", 
+                        contextDataParams: {
+                            objectType: "KalturaPlaybackContextOptions", 
+                            context: "START_OVER", 
+                            streamerType: "mpegdash",
+                            urlType: "DIRECT", 
+                        },
+                        ks: this.o2tv.getSession().getKS()
+                    },
+                    apiVersion: "7.8.1",
+                    ks: this.o2tv.getSession().getKS(),
+                    partnerId: this.o2tv.getPartnerId(), 
+                },            
+            });
+        }
+
+        // Normal stream
         return this.playStream({
             data: {
                 1: {
@@ -85,37 +122,7 @@ module.exports = class O2TVStream {
                 apiVersion: "7.8.1", 
                 ks: this.o2tv.getSession().getKS(), 
                 partnerId: this.o2tv.getPartnerId(), 
-            }            
+            }, 
         });
-    }
-
-    getKeepaliveURL(url, mpd) {
-        let keepalive;
-
-        parseString(mpd, (error, result) => {
-            if (error) 
-                return console.error('Error parsing XML:', error);
-
-            const adaptationSets = result.MPD.Period[0].AdaptationSet;
-            for (const adaptationSet of adaptationSets) {
-                if (adaptationSet.$.contentType != "video") 
-                    continue;
-                
-                const maxBandwidth = adaptationSet.$.maxBandwidth;
-                const segmentTemplates = adaptationSet.SegmentTemplate;
-                for (const segmentTemplate of segmentTemplates) {
-                    const timelines = segmentTemplate.SegmentTimeline;
-                    
-                    let ts;
-                    for (const timeline of timelines) 
-                        ts = timeline.S[0].$.t;
-                    
-                    const uri = 'dash/' + segmentTemplate.$.media.replace('&amp;', '&').replace('$RepresentationID$', 'video=' + maxBandwidth).replace('$Time$', ts);
-                    keepalive = url.replace('manifest.mpd?bkm-query', uri);
-                }
-            }
-        });
-
-        return keepalive;
     }
 }

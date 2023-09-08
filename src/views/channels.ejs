@@ -21,7 +21,8 @@
             <a data-download class="bg-indigo-500 hover:bg-indigo-600 text-neutral-100 font-bold py-2 px-4 rounded">Download Playlist</a>
         </div>
         
-        <div data-channels class="flex grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 my-4"></div>
+        <div data-channels class="container mx-auto grid md:grid-cols-2 gap-4 py-4">
+        </div>
     </main>
 
     <%- include("partials/footer.ejs") %>
@@ -36,23 +37,75 @@
             event.preventDefault();
             window.location.href = `/api/o2tv/playlist`;
         });
-        
-        function displayChannel(id, name, logo) {
-            const element = $("<div>").addClass("flex flex-col justify-center items-center").attr("data-channel", id);
-            const logoElement = $("<img>").addClass("h-12 w-auto cursor-pointer").attr("src", logo);
-            const nameElement = $("<h2>").addClass("text-lg font-semibold mb-2 cursor-pointer").text(name);
 
-            return element.append(logoElement, nameElement);
+        function convertUnixToTime(ts) {
+            return new Date(ts).toLocaleTimeString('en-US');
         }
-
-        function initChannels() {
-            const channel = $("[data-channel]");
-
-            channel.on("click", function() {
-                const id = $(this).data("channel");
-                window.location.href = `/api/o2tv/playlist?id=${id}`;
+        
+        function displayChannel(channel, epg, md) {
+            if (!(channel && epg)) 
                 return;
-            });
+
+            const logoElement = $("<img>")
+                .addClass("h-12 w-auto m-1")
+                .attr("src", channel.logo);
+
+            const channelNameElement = $("<h2>")
+                .addClass("text-lg font-semibold")
+                .text(channel.name)
+                .append(
+                    $("<span>")
+                        .addClass("text-muted text-sm")
+                        .text(` (${convertUnixToTime(epg.startts * 1000)} - ${convertUnixToTime(epg.endts * 1000)})`)
+                );
+
+            const epgTitle = $("<p>")
+                .addClass("text-muted text-sm")
+                .text(epg.title);
+            
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+            const epgDuration = epg.endts - epg.startts;
+            const elapsedTime = currentTimestamp - epg.startts;
+            let progressPercentage = (elapsedTime / epgDuration) * 100;
+            progressPercentage = progressPercentage > 100 ? 100 : progressPercentage;
+
+            const progressBar = $("<div>")
+                .addClass("h-2 w-full bg-indigo-700 rounded-md")
+                .append(
+                    $("<div>")
+                        .addClass("h-full bg-indigo-500  rounded-md")
+                        .css("width", `${progressPercentage}%`)
+                );
+                
+            const programInfo = $("<div>")
+                .addClass("space-y-1")
+                .append(epgTitle, progressBar);
+
+            const channelInfo = $("<div>")
+                .addClass("w-full")
+                .append(channelNameElement, programInfo);
+            
+            const downloadButton = $("<button>")
+                .addClass("h-8 w-9 px-2 py-2 ml-2 bg-indigo-500 hover:bg-indigo-600 rounded-md")
+                .append(
+                    $("<img>")
+                        .attr("src", "/public/img/icons/download.svg")
+                )
+                .on("click", function() {
+                    let playlistUrl = `/api/o2tv/playlist?id=${channel.id}`;
+
+                    if (md && md.id) 
+                        playlistUrl += `&md=${md.id}`;
+
+                    window.location.href = playlistUrl;
+                    return;
+                });
+            
+            const element = $("<div>")
+                .addClass("p-4 flex items-center bg-neutral-800 rounded-md shadow-md")
+                .append(logoElement, channelInfo, downloadButton);
+
+            return channels.append(element);
         }
 
         apiRequest({
@@ -66,13 +119,12 @@
 
             if (data.code == 200) {
                 $.each(data.channels, (id, channelData) => {
-                    const { name, logo } = channelData;
+                    const { channel, epg, md } = channelData;
                     
-                    const channelElement = displayChannel(id, name, logo);
-                    channels.append(channelElement);
+                    displayChannel(channel, epg, md);
+                    return;
                 });
 
-                initChannels();
                 return;
             }
             

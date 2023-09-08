@@ -22,31 +22,44 @@ module.exports = class {
     async setup(express) {
         express.get(this.url, async (req, res) => {
             try {
-                const { id } = req.query;
-                const channels = await this.application.getO2TV().getChannels().getChannels()
-                    .then((data) => {
-                        if (id) 
-                            return Object.keys(data).reduce((result, key) => (data[key].id == id ? { ...result, [key]: data[key] } : result), {});
+                const { id, md } = req.query;
 
-                        return data;
-                    })
-                    .then((data) => {
-                        return Object.keys(data).map((key) => {
-                            return {
-                                id: data[key].id,
-                                name: data[key].name,
-                                logo: data[key].logo,
-                            };
-                        })
-                    });
-                
-                let m3uEntry = "#EXTM3U";
-                for (const channel of channels) 
-                    m3uEntry += `\n#EXTINF:-1 catchup=\"append\" catchup-days=\"7\" catchup-source=\"&catchup_start_ts={utc}&catchup_end_ts={utcend}\" tvg-id=\"${channel.name}\" tvh-epg=\"0\" tvg-logo=\"${channel.logo}\",${channel.name}\n${this.application.getConfig().WebServer_PublicURL}/api/o2tv/stream?id=${channel.id}`;
-                
+                const channelsList = this.application.getO2TV().getChannels().getChannelsList('number');
+                const liveEpg = await this.application.getO2TV().getEpg().getLiveEpg();
+
+                let playlistM3U = "#EXTM3U";
+
+                for (const channelNum of Object.keys(channelsList)) {
+                    const channel = channelsList[channelNum];
+
+                    // If channel doesn't have EPG
+                    if (!liveEpg[channel.getID()]) 
+                        continue;
+
+                    // If id is specified and it doesn't match the channel's id
+                    if (id && channel.getID() != id) 
+                        continue;
+                    
+                    // If channel is a Multi-dimension stream
+                    if (liveEpg[channel.getID()].md) {
+                        const multiDimension = await channel.fetchMultiDimension(liveEpg[channel.getID()]);
+
+                        multiDimension.map((data) => {
+                            if (md && data.id != md) 
+                                return;
+
+                            playlistM3U += `\n#EXTINF:-1 catchup=\"append\" catchup-days=\"7\" catchup-source=\"&catchup_start_ts={utc}&catchup_end_ts={utcend}\" tvg-id=\"${channel.getNumber()}\" tvh-epg=\"0\" tvg-logo=\"${channel.getLogo()}\",${channel.getName()} MD: ${data.name}\n${this.application.getConfig().WebServer_PublicURL}/api/o2tv/stream?id=${channel.getID()}&md=${data.id}`;
+                        });
+
+                        continue;
+                    }
+
+                    playlistM3U += `\n#EXTINF:-1 catchup=\"append\" catchup-days=\"7\" catchup-source=\"&catchup_start_ts={utc}&catchup_end_ts={utcend}\" tvg-id=\"${channel.getNumber()}\" tvh-epg=\"0\" tvg-logo=\"${channel.getLogo()}\",${channel.getName()}\n${this.application.getConfig().WebServer_PublicURL}/api/o2tv/stream?id=${channel.getID()}`
+                }
+
                 res.setHeader("Content-Type", "text/plain")
                     .setHeader("Content-Disposition", "attachment; filename=\"playlist.m3u\"")
-                    .send(m3uEntry);
+                    .send(playlistM3U);
             } catch (error) {
                 let response;
 
