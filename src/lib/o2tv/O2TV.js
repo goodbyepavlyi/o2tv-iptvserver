@@ -3,7 +3,7 @@ const O2TVChannels = require("./O2TVChannels");
 const O2TVSession = require("./O2TVSession");
 const O2TVStream = require("./O2TVStream");
 const O2TVApi = require("./O2TVApi");
-const O2TVEpg = require("./O2TVEPG");
+const O2TVEpg = require("./O2TVEpg");
 
 module.exports = class O2TV {
     /**
