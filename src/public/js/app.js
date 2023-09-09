@@ -89,9 +89,9 @@ function apiRequest(options, callback) {
         },
         error: (xhr, status, error) => {
             if (!callback)
-                return console.error("API Error:", error);
+                return console.error("API Error:", JSON.parse(xhr.responseText));
 
-            return callback(error);
+            return callback(JSON.parse(xhr.responseText));
         }
     });
 }
