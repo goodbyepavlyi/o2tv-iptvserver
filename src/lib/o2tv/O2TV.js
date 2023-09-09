@@ -61,7 +61,6 @@ module.exports = class O2TV {
     }
 
     async load() {
-        await this.session.loadSession();
-        await this.channels.loadChannels();
+        const sessionLoaded = await this.session.loadSession();
     }
 }

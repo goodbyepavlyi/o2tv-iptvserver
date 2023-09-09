@@ -294,7 +294,8 @@ module.exports = class O2TVSession {
     
             if (active) {
                 this.o2tv.getApplication().getConsoleLog().success("O2TV", "Session loaded successfully.");
-                return;
+                await this.o2tv.channels.loadChannels();
+                return true;
             } 
     
             for (const service in this.services) {
@@ -308,6 +309,8 @@ module.exports = class O2TVSession {
             }
     
             this.o2tv.getApplication().getConsoleLog().success("O2TV", "Session loaded successfully.");
+            await this.o2tv.channels.loadChannels();
+            return true;
         } catch (error) {
             this.o2tv.getApplication().getConsoleLog().error("O2TV", `Error loading session: ${error.message}`);
         }
