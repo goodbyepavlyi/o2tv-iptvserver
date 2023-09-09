@@ -67,11 +67,7 @@ async function checkForUpdates() {
 function apiRequest(options, callback) {
     const requestOptions = {
         method: options.method || "GET",
-        headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json; charset=UTF-8",
-            ...options.headers,
-        },
+        headers: options.headers,
         cache: "no-cache"
     };
 
