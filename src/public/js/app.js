@@ -55,9 +55,9 @@ async function checkForUpdates() {
         return latestRelease;
     });
 
-    console.log(`Current Release: ${currentRelease}, Latest Release: ${latestRelease.version}`);
+    console.log(`Current Release: ${currentRelease.version}, Latest Release: ${latestRelease.version}`);
 
-    if (currentRelease >= latestRelease.version) 
+    if (currentRelease.version >= latestRelease.version) 
         return;
 
     $("[data-updater-changelog]").text(latestRelease.changelog);
@@ -66,19 +66,19 @@ async function checkForUpdates() {
 
 function apiRequest(options, callback) {
     const requestOptions = {
-        method: options.method || "GET",
-        headers: options.headers,
-        cache: "no-cache"
+        type: options.method || "GET",
+        url: options.url,
+        dataType: 'json',
     };
 
-    if (options.body && requestOptions.method != "GET")
-        requestOptions.body = JSON.stringify(options.body);
+    if (options.body) {
+        requestOptions.data = JSON.stringify(options.body);
+        requestOptions.contentType = 'application/json;charset=UTF-8';
+    }
 
-    return fetch(options.url, requestOptions)
-        .then((response) => {
-            return response.json();
-        })
-        .then((data) => {
+    return $.ajax({
+        ...requestOptions,
+        success: (data) => {
             if (!callback)
                 return data;
 
@@ -86,13 +86,14 @@ function apiRequest(options, callback) {
                 return callback(data);
 
             return callback(null, data);
-        })
-        .catch((error) => {
+        },
+        error: (xhr, status, error) => {
             if (!callback)
                 return console.error("API Error:", error);
 
             return callback(error);
-        });
+        }
+    });
 }
 
 function displayError(error, hideTimeout) {
