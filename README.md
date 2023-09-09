@@ -11,9 +11,33 @@
 
 ## Installation
 
-To automatically install & run the container, simply download the [docker-compose.yml]([https://github.](https://github.com/goodbyepavlyi/o2tv-iptvserver/blob/master/docker-compose.yml)) and run `docker-compose up -d`
+**Note**: Before proceeding, ensure that Docker is installed on your system.
+
+#### 1. Clone the GitHub repository:
+```bash
+git clone https://github.com/goodbyepavlyi/o2tv-iptvserver
+```
+
+#### 2. Run the container:
+```bash
+docker compose up -d
+```
 
 > You have to replace the WEBSERVER_PUBLICURL variable.
+
+#### Installing the Development version
+
+To set up the development version, complete the following steps:
+
+#### 1. Clone the GitHub repository to get the development files:
+```bash
+git clone -b develop https://github.com/goodbyepavlyi/o2tv-iptvserver
+```
+
+#### 2. Run the development container:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
 
 ## Update
 
