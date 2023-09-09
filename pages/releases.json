@@ -1,4 +1,5 @@
 {
     "1.0.0": "Initial release: The first version of O2TV IPTV Server.",
-    "2.0.0": "O2TV 2.0 support: Added support for O2TV 2.0 features."
+    "2.0.0": "O2TV 2.0 support: Added support for O2TV 2.0 features.",
+    "2.1.0": "Multi dimension stream support, bug fixes: Added support for multi dimension stream and fixed various bugs."
 }
