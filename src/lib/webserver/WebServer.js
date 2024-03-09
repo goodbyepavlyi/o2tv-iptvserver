@@ -1,80 +1,99 @@
 const express = require("express");
+const fs = require("fs");
 const path = require("path");
-const { walkFs } = require("../utils/FileHelper");
-const Application = require("../Application");
-const LogHandler = require("./handlers/LogHandler");
-const ErrorHandler = require("./handlers/ErrorHandler");
 const Logger = require("../utils/Logger");
 const Config = require("../Config");
 
-module.exports = class WebServer {
+module.exports = class Webserver {
     /**
-     * 
-     * @param {Application} application 
+     * @param {import("../Application")} application 
      */
     constructor(application) {
+        /** @type {import("../Application")} */
         this.application = application;
-        this.express = express();
-    }
-
-    getExpress() {
-        return this.express;
-    }
-    
-    getServer() {
-        return this.server;
-    }
-
-    async start() {
-        Logger.info(Logger.Type.Webserver, "Starting Web Server..");
-    
-        this.express.set("trust proxy", 1);
-        this.express.set("view engine", "ejs");
-        this.express.set("views", path.resolve(__dirname, "../../views"));
         
-        this.express.use(express.json())
-        this.express.use("/favicon.ico", express.static(path.resolve(__dirname, "../../public/favicon.ico")))
-        this.express.use("/public", express.static(path.resolve(__dirname, "../../public")))
+        this.routers = {};
+        this.middlewares = {};
+        
+        this.app = express();
+        this.port = Config.webserverPort;
 
-        const logHandler = new LogHandler(this.application);
-        this.express.use(logHandler.logRoute.bind(logHandler));
+        this.app.set("view engine", "ejs");
+        this.app.set("views", path.join(__dirname, "./views"));
+        this.app.disable("x-powered-by");
 
-        await this.registerRoutes();
-
-        const errorHandler = new ErrorHandler(this.application);
-        this.express.use(errorHandler.handle404Error.bind(errorHandler));
-        this.express.use(errorHandler.handleServerErrors.bind(errorHandler));
-
-        this.listen();
+        this._registerRoutes();
     }
 
-    async registerRoutes() {
-        Logger.info(Logger.Type.Webserver, "Registering routes..");
+    async _registerRoutes() {
+        await this.loadMiddlewares();
+        await this.loadRouters();
 
-        const files = walkFs(path.resolve(__dirname, "../../routes")).filter(file => file.endsWith(".js"));
-        for (const fileName of files) {
-            const route = new (require(fileName))(this.application);
-            
+        this.app.use("/api", express.json());
+        this.app.use((req, res, next) => this.middlewares["RequestLog"].run(req, res, next));
+
+        this.app.use("/favicon.ico", express.static(path.resolve(__dirname, "./public/favicon.ico")))
+        this.app.use("/public", express.static(path.join(__dirname, "./public")));
+        this.app.use("/", this.routers["Root"].router);
+
+        this.app.use("/api", this.routers["APIRoute"].router);
+        this.app.use("/api/o2tv", this.routers["APIO2TVRoute"].router);
+
+        this.app.use((req, res, next) => this.middlewares["RouteNotFound"].run(req, res, next));
+        this.app.use((error, req, res, next) => this.middlewares["ServerError"].run(error, req, res, next));
+    }
+
+    async loadMiddlewares() {
+        Logger.info(Logger.Type.Webserver, "Loading middlewares...");
+
+        for (const filePath of fs.readdirSync(path.resolve(__dirname, "./middlewares")).filter(file => file.endsWith(".js"))) {
             try {
-                await route.setup(this.express);
-                Logger.debug(Logger.Type.Webserver, `Route ${route.url} registered successfully.`);
-            } catch (error) {
-                Logger.error(Logger.Type.Webserver, `Failed to register route ${route.url}. Error: ${error.message}`);
-            }
-        };
+                const middleware = new(require(`./middlewares/${filePath}`))(this);
+                const fileName = path.parse(filePath).name;
 
-        Logger.info(Logger.Type.Webserver, "Routes registered successfully.");
+                this.middlewares[fileName] = middleware;
+                Logger.debug(Logger.Type.Webserver, `Loaded middleware ${Logger.Colors.Fg.Magenta}${fileName}${Logger.Colors.Reset}`);
+            } catch (error) {
+                Logger.error(Logger.Type.Webserver, `An unknown error occured while loading middleware "${filePath}":`, error);
+            }
+        }
+
+        if (Object.keys(this.middlewares).length === 0) {
+            return Logger.warn(Logger.Type.Webserver, "No middlewares loaded");
+        }
+
+        Logger.info(Logger.Type.Webserver, `${Logger.Colors.Fg.Magenta}${Object.keys(this.middlewares).length}${Logger.Colors.Reset} middlewares loaded`);
     }
 
-    listen() {
+
+    async loadRouters() {
+        Logger.info(Logger.Type.Webserver, "Loading routers...");
+
+        for (const filePath of fs.readdirSync(path.resolve(__dirname, "./routers")).filter(file => file.endsWith(".js"))) {
+            try {
+                const router = new(require(`./routers/${filePath}`))(this);
+                const fileName = path.parse(filePath).name;
+
+                this.routers[fileName] = router;
+                Logger.debug(Logger.Type.Webserver, `Loaded router ${Logger.Colors.Fg.Magenta}${fileName}${Logger.Colors.Reset}`);
+            } catch (error) {
+                Logger.error(Logger.Type.Webserver, `An unknown error occured while loading router "${filePath}":`, error);
+            }
+        }
+
+        if (Object.keys(this.routers).length === 0) {
+            return Logger.warn(Logger.Type.Webserver, "No routers loaded");
+        }
+
+        Logger.info(Logger.Type.Webserver, `${Logger.Colors.Fg.Magenta}${Object.keys(this.routers).length}${Logger.Colors.Reset} routers loaded`);
+    }
+
+    start() {
         try {
-            this.server = this.express.listen(Config.webserverPort, Config.webserverAddress, () => {
-                Logger.info(Logger.Type.Webserver, `Web Server is listening on ${Config.webserverAddress}:${Config.webserverPort}`);
-            }).on("error", (error) => {
-                Logger.error(Logger.Type.Webserver, `Failed to start the Web Server. Error: ${error.message}`);
-            });
+            this.server = this.app.listen(Config.webserverPort, Config.webserverAddress, () => 
+                Logger.info(Logger.Type.Webserver, `Web Server is listening on ${Config.webserverAddress}:${Config.webserverPort}`))
         } catch (error) {
-            Logger.error(Logger.Type.Webserver, `Failed to start the Web Server. Error: ${error.message}`);
+            Logger.error(Logger.Type.Webserver, "An error occured while starting the Web Server:", error);
         }
     }
 }

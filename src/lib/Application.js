@@ -1,18 +1,18 @@
 const Config = require("./Config");
 const O2TV = require("./o2tv/O2TV");
 const Logger = require("./utils/Logger");
-const WebServer = require("./webserver/WebServer");
+const Webserver = require("./webserver/Webserver");
 
 module.exports = class Application {
     constructor() {
-        this.webServer = new WebServer(this);
+        this.webserver = new Webserver(this);
         this.o2tv = new O2TV(this);
 
         this.start();
     }
 
     getWebServer() {
-        return this.webServer;
+        return this.webserver;
     }
 
     getO2TV() {
@@ -24,7 +24,7 @@ module.exports = class Application {
             let launchTime = Date.now();
 
             await this.o2tv.load();
-            await this.webServer.start();
+            this.webserver.start();
             Logger.info(Logger.Type.Application, `Started in ${(Date.now() - launchTime) / 1000}ms`);
         });
     }
