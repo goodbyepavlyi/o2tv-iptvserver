@@ -1,3 +1,4 @@
+const Config = require("../Config");
 const Logger = require("../utils/Logger");
 const O2TV = require("./O2TV");
 const { O2TVAuthenticationError, O2TVError } = require("./O2TVErrors");
@@ -164,8 +165,6 @@ module.exports = class O2TVSession {
 
     async createSession() {
         try {
-            const { O2TV_Username: username, O2TV_Password: password, O2TV_DeviceId: deviceId } = this.o2tv.getApplication().getConfig();
-    
             Logger.debug(Logger.Type.O2TV, `Getting user credentials... ${JSON.stringify({ username, password, deviceId })}`);
     
             const anonymousLogin = await this.anonymousLogin()
@@ -177,7 +176,7 @@ module.exports = class O2TVSession {
     
             const ks = anonymousLogin.ks;
     
-            const login = await this.login(username, password, deviceId)
+            const login = await this.login(Config.o2tvUsername, Config.o2tvPassword, Config.o2tvDeviceId)
                 .catch((error) => {
                     Logger.error(Logger.Type.O2TV, `Error during login: ${error}`);
                     throw error;
@@ -247,13 +246,12 @@ module.exports = class O2TVSession {
         try {
             Logger.info(Logger.Type.O2TV, "Loading session...");
     
-            const { O2TV_Username: username, O2TV_Password: password, O2TV_DeviceId: deviceId } = this.o2tv.getApplication().getConfig();
-            if (!(username && password && deviceId)) {
+            if (!(Config.o2tvUsername && Config.o2tvPassword && Config.o2tvDeviceId)) {
                 Logger.error(Logger.Type.O2TV, "Credentials not found!");
                 return;
             }
     
-            const services = this.o2tv.getApplication().getConfig().O2TV_Services;
+            const services = Config.o2tvServices;
             this.services = null;
     
             if (services) {
@@ -322,14 +320,14 @@ module.exports = class O2TVSession {
      */
     saveSession() {
         Logger.debug(Logger.Type.O2TV, "Saving session...");
-        this.o2tv.getApplication().getConfig().O2TV_Services = this.services;
+        Config.o2tvServices = this.services;
     }
 
     /**
      * Removes the session data.
      */
     removeSession() {
-        this.o2tv.getApplication().getConfig().O2TV_Services = {};
+        Config.o2tvServices = {};
         this.valid_to = -1;
         this.createSession();
     }

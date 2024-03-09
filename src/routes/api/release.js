@@ -1,5 +1,6 @@
 const Application = require("../../lib/Application");
 const Logger = require("../../lib/utils/Logger");
+const Utils = require("../../lib/utils/Utils");
 const ApiResponse = require("../../lib/webserver/ApiResponse");
 const WebRoute = require("../../lib/webserver/WebRoute");
 
@@ -23,7 +24,7 @@ module.exports = class {
         express.get(this.url, async (req, res) => {
             try {
                 ApiResponse.Success.send(res, {
-                    version: this.application.getConfig().Version,
+                    version: Utils.getVersion(),
                 });
             } catch (error) {
                 let response;

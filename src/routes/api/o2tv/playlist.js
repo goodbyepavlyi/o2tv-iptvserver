@@ -1,4 +1,5 @@
 const Application = require("../../../lib/Application");
+const Config = require("../../../lib/Config");
 const { O2TVAuthenticationError, O2TVApiError } = require("../../../lib/o2tv/O2TVErrors");
 const Logger = require("../../../lib/utils/Logger");
 const ApiResponse = require("../../../lib/webserver/ApiResponse");
@@ -49,13 +50,13 @@ module.exports = class {
                             if (md && data.id != md) 
                                 return;
 
-                            playlistM3U += `\n#EXTINF:-1 catchup=\"append\" catchup-days=\"7\" catchup-source=\"&catchup_start_ts={utc}&catchup_end_ts={utcend}\" tvg-id=\"${channel.getNumber()}\" tvh-epg=\"0\" tvg-logo=\"${channel.getLogo()}\",${channel.getName()} MD: ${data.name}\n${this.application.getConfig().WebServer_PublicURL}/api/o2tv/stream?id=${channel.getID()}&md=${data.id}`;
+                            playlistM3U += `\n#EXTINF:-1 catchup=\"append\" catchup-days=\"7\" catchup-source=\"&catchup_start_ts={utc}&catchup_end_ts={utcend}\" tvg-id=\"${channel.getNumber()}\" tvh-epg=\"0\" tvg-logo=\"${channel.getLogo()}\",${channel.getName()} MD: ${data.name}\n${Config.webserverPublicUrl}/api/o2tv/stream?id=${channel.getID()}&md=${data.id}`;
                         });
 
                         continue;
                     }
 
-                    playlistM3U += `\n#EXTINF:-1 catchup=\"append\" catchup-days=\"7\" catchup-source=\"&catchup_start_ts={utc}&catchup_end_ts={utcend}\" tvg-id=\"${channel.getNumber()}\" tvh-epg=\"0\" tvg-logo=\"${channel.getLogo()}\",${channel.getName()}\n${this.application.getConfig().WebServer_PublicURL}/api/o2tv/stream?id=${channel.getID()}`
+                    playlistM3U += `\n#EXTINF:-1 catchup=\"append\" catchup-days=\"7\" catchup-source=\"&catchup_start_ts={utc}&catchup_end_ts={utcend}\" tvg-id=\"${channel.getNumber()}\" tvh-epg=\"0\" tvg-logo=\"${channel.getLogo()}\",${channel.getName()}\n${Config.webserverPublicUrl}/api/o2tv/stream?id=${channel.getID()}`
                 }
 
                 res.setHeader("Content-Type", "text/plain")

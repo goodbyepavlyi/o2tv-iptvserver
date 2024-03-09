@@ -5,6 +5,7 @@ const Application = require("../Application");
 const LogHandler = require("./handlers/LogHandler");
 const ErrorHandler = require("./handlers/ErrorHandler");
 const Logger = require("../utils/Logger");
+const Config = require("../Config");
 
 module.exports = class WebServer {
     /**
@@ -66,12 +67,9 @@ module.exports = class WebServer {
     }
 
     listen() {
-        const listenAddress = this.application.getConfig().WebServer_ListenAddress;
-        const port = this.application.getConfig().WebServer_Port;
-
         try {
-            this.server = this.express.listen(port, listenAddress, () => {
-                Logger.info(Logger.Type.Webserver, `Web Server is listening on ${listenAddress}:${port}`);
+            this.server = this.express.listen(Config.webserverPort, Config.webserverAddress, () => {
+                Logger.info(Logger.Type.Webserver, `Web Server is listening on ${Config.webserverAddress}:${Config.webserverPort}`);
             }).on("error", (error) => {
                 Logger.error(Logger.Type.Webserver, `Failed to start the Web Server. Error: ${error.message}`);
             });

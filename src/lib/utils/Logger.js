@@ -53,6 +53,10 @@ class Logger {
             color: Logger.Colors.Fg.Magenta,
             output: "LOGGER",
         },
+        Config: {
+            color: Logger.Colors.Fg.Yellow,
+            output: "CONFIG",
+        },
         Watchdog: {
             color: Logger.Colors.Fg.Red,
             output: "WATCHDOG",

@@ -1,20 +1,14 @@
+const Config = require("./Config");
 const O2TV = require("./o2tv/O2TV");
-const Config = require("./utils/Config");
 const Logger = require("./utils/Logger");
 const WebServer = require("./webserver/WebServer");
 
 module.exports = class Application {
     constructor() {
-        this.config = new Config();
-
         this.webServer = new WebServer(this);
         this.o2tv = new O2TV(this);
 
         this.start();
-    }
-
-    getConfig() {
-        return this.config;
     }
 
     getWebServer() {
@@ -39,7 +33,7 @@ module.exports = class Application {
         return new Promise(async (resolve, reject) => {
             Logger.info(Logger.Type.Application, "Shutdown in progress..");
     
-            this.config.save();
+            Config.saveConfig();
             resolve();
         });
     }

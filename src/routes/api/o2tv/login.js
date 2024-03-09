@@ -1,4 +1,5 @@
 const Application = require("../../../lib/Application");
+const Config = require("../../../lib/Config");
 const { O2TVAuthenticationError, O2TVApiError } = require("../../../lib/o2tv/O2TVErrors");
 const Logger = require("../../../lib/utils/Logger");
 const ApiResponse = require("../../../lib/webserver/ApiResponse");
@@ -31,9 +32,9 @@ module.exports = class {
 
                 await this.application.getO2TV().getSession().login(username, password, null)
                     .then(async () => {
-                        this.application.getConfig().O2TV_Username = username;
-                        this.application.getConfig().O2TV_Password = password;
-                        this.application.getConfig().O2TV_DeviceId = this.application.getO2TV().getSession().createDeviceId();
+                        Config.o2tvUsername = username;
+                        Config.o2tvPassword = password;
+                        Config.o2tvDeviceId = this.application.getO2TV().getSession().createDeviceId();
 
                         await this.application.getO2TV().getSession().loadSession()
                             .then(() => ApiResponse.Success.send(res));
