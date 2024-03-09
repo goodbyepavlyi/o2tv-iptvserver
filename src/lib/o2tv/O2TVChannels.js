@@ -1,10 +1,8 @@
-const O2TV = require("./O2TV");
 const O2TVChannel = require("./types/O2TVChannel");
 
 module.exports = class O2TVChannels {
     /**
-     * 
-     * @param {O2TV} o2tv 
+     * @param {import("./O2TV")} o2tv 
      */
     constructor(o2tv) {
         this.o2tv = o2tv;
@@ -14,7 +12,7 @@ module.exports = class O2TVChannels {
     }
 
     async getChannels() {
-        if (!this.validTo || this.validTo == -1 || this.validTo < Math.floor(Date.now() / 1000) || !this.channels) {
+        if (this.validTo < Math.floor(Date.now() / 1000) || !this.channels) {
             this.validTo = -1;
             await this.loadChannels();
         }
@@ -23,13 +21,16 @@ module.exports = class O2TVChannels {
     }
 
     getChannelsList(byKey) {
-        let channels = {};
-        if (!byKey) 
-            channels = this.channels;
-        else 
-            for (const channel in this.channels) 
-                channels[this.channels[channel][byKey]] = this.channels[channel];
-
+        if (!byKey) {
+            return this.channels;
+        }
+        
+        const channels = {};
+        // TODO: this probably can be optimized but i'm not sure rn
+        for (const channel in this.channels) {
+            channels[this.channels[channel][byKey]] = this.channels[channel];
+        }
+    
         return channels;
     }
 
@@ -54,8 +55,9 @@ module.exports = class O2TVChannels {
         });
         
         for (const channel of result) {
-            if (!channel.metas.ChannelNumber) 
+            if (!channel.metas.ChannelNumber) {
                 continue;
+            }
 
             let image;
             if (channel.images.length > 1) {

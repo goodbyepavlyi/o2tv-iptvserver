@@ -1,11 +1,9 @@
 const axios = require("axios");
 const { O2TVApiError } = require("./O2TVErrors");
-const O2TV = require("./O2TV");
 
 module.exports = class O2TVApi {
     /**
-     * 
-     * @param {O2TV} o2tv 
+     * @param {import("./O2TV")} o2tv 
      */
     constructor(o2tv) {
         this.o2tv = o2tv;
@@ -17,21 +15,20 @@ module.exports = class O2TVApi {
         };
     }
 
-    getHeaders() {
-        return this.headers;
-    }
+    getHeaders = () => this.headers;
 
     /**
-     * Calls the O2 API with the provided URL, data, and headers.
-     * 
-     * @param {string} url - The URL to call.
-     * @param {Object|null} data - The data to send.
-     * @param {Object} headers - The headers to include in the request.
-     * @returns {Promise<Object>} - The API response data.
+     * @param {object} options
+     * @param {string} options.url
+     * @param {string} options.method
+     * @param {object} options.data
+     * @param {object} options.headers
+     * @returns {Promise<object>}
      */
     async call(options) {
-        if (options.data != null) 
+        if (options.data) {
             options.data = JSON.stringify(options.data);
+        }
 
         try {
             const response = await axios({
@@ -43,43 +40,49 @@ module.exports = class O2TVApi {
 
             return response.data;
         } catch (error) {
-            if (!error.response) 
+            if (!error.response) {
                 throw new O2TVApiError(error.message);
+            }
 
             throw new O2TVApiError(error.message, error.response);
         }
     }
 
-    async callList(post) {
+    async callList(data) {
         let result = [];
         let fetch = true;
 
         while (fetch) {
-            const data = await this.call({
-                url: `https://${this.o2tv.getPartnerId()}.frp1.ott.kaltura.com/api_v3/service/asset/action/list?format=1&clientTag=${this.o2tv.getClientTag()}`, 
-                method: "POST", 
-                data: post, 
-                headers: this.o2tv.getApi().getHeaders(), 
+            const response = await this.call({
+                url: `https://${this.o2tv.getPartnerId()}.frp1.ott.kaltura.com/api_v3/service/asset/action/list?format=1&clientTag=${this.o2tv.getClientTag()}`,
+                method: "POST",
+                data,
+                headers: this.o2tv.getApi().getHeaders()
             });
 
-            if (data.err || data.error || !data.result || !data.result.hasOwnProperty('totalCount')) {
+            if (response.err || response.error || !response.result || !response.result.hasOwnProperty('totalCount')) {
                 fetch = false;
-                throw new O2TVApiError(`Failed to fetch data from O2 TV. Error: ${JSON.stringify(data)}`, data);
+                throw new O2TVApiError(`Failed to fetch data from O2 TV. Error: ${JSON.stringify(response)}`, response);
             }
 
-            const totalCount = data.result.totalCount;
-            if (totalCount <= 0) 
-                return fetch = false;
-            
-            for (const object of data.result.objects) 
-                result.push(object);
-    
-            if (totalCount == result.length) 
+            const totalCount = response.result.totalCount;
+            if (totalCount <= 0) {
                 fetch = false;
+                return;
+            }
+            
+            for (const object of response.result.objects) {
+                result.push(object);
+            }
+    
+            if (totalCount == result.length) {
+                fetch = false;
+            }
 
-            let pager = post["pager"];
-            pager["pageIndex"] =+ 1;
-            post["pager"] = pager;
+            // let pager = response["pager"];
+            // pager["pageIndex"] =+ 1;
+            // response["pager"] = pager;
+            data['pager']['pageIndex'] += 1;
         }
 
         return result;

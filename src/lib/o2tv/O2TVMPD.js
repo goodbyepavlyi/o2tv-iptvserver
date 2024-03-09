@@ -2,7 +2,6 @@ const xml2js = require("xml2js");
 
 module.exports = class O2TVMPD {
     /**
-     * 
      * @param {String} content 
      */
     constructor(content) {
