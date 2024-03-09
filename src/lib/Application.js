@@ -11,30 +11,20 @@ module.exports = class Application {
         this.start();
     }
 
-    getWebServer() {
-        return this.webserver;
-    }
+    getWebserver = () => this.webserver;
+    getO2TV = () => this.o2tv;
 
-    getO2TV() {
-        return this.o2tv;
-    }
+    async start() {
+        const launchTime = Date.now();
 
-    start() {
-        return new Promise(async (resolve, reject) => {
-            let launchTime = Date.now();
+        await this.o2tv.load();
+        this.webserver.start();
 
-            await this.o2tv.load();
-            this.webserver.start();
-            Logger.info(Logger.Type.Application, `Started in ${(Date.now() - launchTime) / 1000}ms`);
-        });
-    }
+        Logger.info(Logger.Type.Application, `Started in ${(Date.now() - launchTime) / 1000}ms`);
+    };
 
     shutdown() {
-        return new Promise(async (resolve, reject) => {
-            Logger.info(Logger.Type.Application, "Shutdown in progress..");
-    
-            Config.saveConfig();
-            resolve();
-        });
-    }
+        Logger.info(Logger.Type.Application, "Shutdown in progress..");
+        Config.saveConfig();
+    } 
 }
