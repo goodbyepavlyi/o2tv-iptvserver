@@ -2,5 +2,6 @@
     "1.0.0": "Initial release: The first version of O2TV IPTV Server.",
     "2.0.0": "O2TV 2.0 support: Added support for O2TV 2.0 features.",
     "2.1.0": "Multi dimension stream support, bug fixes: Added support for multi dimension stream and fixed various bugs.",
-    "2.1.1": "Bug fixes: O2TVEPG module error, apiRequest request failure, post-login channel loading, and error code reading in messages."
+    "2.1.1": "Bug fixes: O2TVEPG module error, apiRequest request failure, post-login channel loading, and error code reading in messages.",
+    "2.1.2": "Bump follow-redirects from 1.15.2 to 1.15.4"
 }
