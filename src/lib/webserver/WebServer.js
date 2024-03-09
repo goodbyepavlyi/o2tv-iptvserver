@@ -4,6 +4,7 @@ const { walkFs } = require("../utils/FileHelper");
 const Application = require("../Application");
 const LogHandler = require("./handlers/LogHandler");
 const ErrorHandler = require("./handlers/ErrorHandler");
+const Logger = require("../utils/Logger");
 
 module.exports = class WebServer {
     /**
@@ -24,7 +25,7 @@ module.exports = class WebServer {
     }
 
     async start() {
-        this.application.getConsoleLog().info("WebServer", "Starting Web Server..");
+        Logger.info(Logger.Type.Webserver, "Starting Web Server..");
     
         this.express.set("trust proxy", 1);
         this.express.set("view engine", "ejs");
@@ -47,7 +48,7 @@ module.exports = class WebServer {
     }
 
     async registerRoutes() {
-        this.application.getConsoleLog().info("WebServer", "Registering routes..");
+        Logger.info(Logger.Type.Webserver, "Registering routes..");
 
         const files = walkFs(path.resolve(__dirname, "../../routes")).filter(file => file.endsWith(".js"));
         for (const fileName of files) {
@@ -55,13 +56,13 @@ module.exports = class WebServer {
             
             try {
                 await route.setup(this.express);
-                this.application.getConsoleLog().debug("WebServer", `Route ${route.url} registered successfully.`);
+                Logger.debug(Logger.Type.Webserver, `Route ${route.url} registered successfully.`);
             } catch (error) {
-                this.application.getConsoleLog().error("WebServer", `Failed to register route ${route.url}. Error: ${error.message}`);
+                Logger.error(Logger.Type.Webserver, `Failed to register route ${route.url}. Error: ${error.message}`);
             }
         };
 
-        this.application.getConsoleLog().success("WebServer", "Routes registered successfully.");
+        Logger.info(Logger.Type.Webserver, "Routes registered successfully.");
     }
 
     listen() {
@@ -70,12 +71,12 @@ module.exports = class WebServer {
 
         try {
             this.server = this.express.listen(port, listenAddress, () => {
-                this.application.getConsoleLog().success("WebServer", `Web Server is listening on ${listenAddress}:${port}`);
+                Logger.info(Logger.Type.Webserver, `Web Server is listening on ${listenAddress}:${port}`);
             }).on("error", (error) => {
-                this.application.getConsoleLog().error("WebServer", `Failed to start the Web Server. Error: ${error.message}`);
+                Logger.error(Logger.Type.Webserver, `Failed to start the Web Server. Error: ${error.message}`);
             });
         } catch (error) {
-            this.application.getConsoleLog().error("WebServer", `Failed to start the Web Server. Error: ${error.message}`);
+            Logger.error(Logger.Type.Webserver, `Failed to start the Web Server. Error: ${error.message}`);
         }
     }
 }

@@ -1,6 +1,7 @@
 const Application = require("../../../lib/Application");
 const { O2TVAuthenticationError, O2TVApiError } = require("../../../lib/o2tv/O2TVErrors");
 const O2TVMPD = require("../../../lib/o2tv/O2TVMPD");
+const Logger = require("../../../lib/utils/Logger");
 const ApiResponse = require("../../../lib/webserver/ApiResponse");
 const WebRoute = require("../../../lib/webserver/WebRoute");
 
@@ -47,7 +48,7 @@ module.exports = class {
                 if (!response) 
                     response = ApiResponse.ServerError;
                 
-                this.application.getConsoleLog().error("WebServer", error);
+                Logger.error(Logger.Type.Webserver, error);
                 response.send(res);
             }
         });

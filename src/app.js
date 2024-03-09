@@ -1,42 +1,42 @@
-const Application = require("./lib/Application.js");
+const Application = require("./lib/Application");
+const Logger = require("./lib/utils/Logger.js");
 const application = new Application();
 
 process.on("unhandledRejection", (reason, promise) => {
-    application.getConsoleLog().error("Unhandled Rejection", reason?.stack || reason);
-    console.debug(reason);
+    Logger.error(Logger.Type.Watchdog, "Unhandled Rejection", {
+        stack: reason?.stack,
+    });
 });
 
 async function shutdown() {
     try {
         await application.shutdown();
+
+        // Need to exit here because otherwise the process would stay open
         process.exit(0);
     } catch (error) {
-        application.getConsoleLog().error("Shutdown", error.stack || error);
+        Logger.error(Logger.Type.Watchdog, `Error occured:`, error);
         process.exit(1);
     }
 }
 
 // Signal termination handler - used if the process is killed
-// (e.g. kill command, service valetudo stop, reboot (via upstart),...)
 process.on("SIGTERM", shutdown);
 
-// Signal interrupt handler -
-// e.g. if the process is aborted by Ctrl + C (during dev)
+// Signal interrupt handler - if the process is aborted by Ctrl + C (during dev)
 process.on("SIGINT", shutdown);
 
 process.on("uncaughtException", (error, origin) => {
-    application.getConsoleLog().error("Uncaught Exception", error.stack || error);
-    
-    shutdown().catch(() => {
-        // Intentional
-    });
+    Logger.error(Logger.Type.Watchdog, "Uncaught Exception", { error, origin });
+
+    shutdown().catch(() => { /* intentional */ });
 });
 
-process.on("exit", async (code) => {
-    await shutdown();
-
-    if (code !== 0) 
-        return application.getConsoleLog().error("Shutdown", `Stacktrace that lead to the process exiting with code ${code}:`, new Error().stack);
-    
-    return application.getConsoleLog().info("Shutdown", `Exiting with code ${code}...`);
+process.on("exit", (code) => {
+    if (code !== 0) {
+        Logger.error(Logger.Type.Watchdog, `Stacktrace that lead to the process exiting with code ${code}:`, new Error().stack);
+        return;
+    }
+   
+    Logger.info(Logger.Type.Watchdog, `Exiting with code ${code}...`);
 });

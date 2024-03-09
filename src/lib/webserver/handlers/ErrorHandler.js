@@ -1,4 +1,5 @@
 const Application = require("../../Application");
+const Logger = require("../../utils/Logger");
 const ApiResponse = require("../ApiResponse");
 
 /**
@@ -44,12 +45,12 @@ module.exports = class ErrorHandler {
                 reason = ApiResponse.MalformedRequest;
             
             if (error.code == 500) 
-                this.application.consoleLog.error("WebServer", error);
+                Logger.error(Logger.Type.Webserver, error);
             
             return reason.send(res);
         }
         
-        this.application.consoleLog.error("WebServer", error);
+        Logger.error(Logger.Type.Webserver, error);
         return res.status(500).render("error");
     }
 };

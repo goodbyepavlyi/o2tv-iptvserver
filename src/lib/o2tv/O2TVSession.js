@@ -1,3 +1,4 @@
+const Logger = require("../utils/Logger");
 const O2TV = require("./O2TV");
 const { O2TVAuthenticationError, O2TVError } = require("./O2TVErrors");
 
@@ -165,12 +166,12 @@ module.exports = class O2TVSession {
         try {
             const { O2TV_Username: username, O2TV_Password: password, O2TV_DeviceId: deviceId } = this.o2tv.getApplication().getConfig();
     
-            this.o2tv.getApplication().getConsoleLog().debug("O2TV", `Getting user credentials... ${JSON.stringify({ username, password, deviceId })}`);
+            Logger.debug(Logger.Type.O2TV, `Getting user credentials... ${JSON.stringify({ username, password, deviceId })}`);
     
             const anonymousLogin = await this.anonymousLogin()
                 .then((data) => data.result)
                 .catch((error) => {
-                    this.o2tv.getApplication().getConsoleLog().error("O2TV", `Error during anonymous login: ${error}`);
+                    Logger.error(Logger.Type.O2TV, `Error during anonymous login: ${error}`);
                     throw error;
                 });
     
@@ -178,7 +179,7 @@ module.exports = class O2TVSession {
     
             const login = await this.login(username, password, deviceId)
                 .catch((error) => {
-                    this.o2tv.getApplication().getConsoleLog().error("O2TV", `Error during login: ${error}`);
+                    Logger.error(Logger.Type.O2TV, `Error during login: ${error}`);
                     throw error;
                 });
     
@@ -187,7 +188,7 @@ module.exports = class O2TVSession {
             const services = await this.fetchServices(jwtToken, ks)
                 .then((data) => JSON.parse(data.result.adapterData.service_list.value)["ServicesList"])
                 .catch((error) => {
-                    this.o2tv.getApplication().getConsoleLog().error("O2TV", `Error fetching services: ${error}`);
+                    Logger.error(Logger.Type.O2TV, `Error fetching services: ${error}`);
                     throw error;
                 });
     
@@ -202,7 +203,7 @@ module.exports = class O2TVSession {
             }
     
             if (!ks_codes || Object.entries(ks_codes).length < 1) {
-                this.o2tv.getApplication().getConsoleLog().error("O2TV", "No KS codes found.");
+                Logger.error(Logger.Type.O2TV, "No KS codes found.");
                 throw new O2TVError();
             }
     
@@ -210,7 +211,7 @@ module.exports = class O2TVSession {
                 const ksCode = ks_codes[service];
                 const data = await this.kalturaLogin(deviceId, jwtToken, ks, ksCode)
                     .catch((error) => {
-                        this.o2tv.getApplication().getConsoleLog().error("O2TV", `Error during Kaltura login for service ${service}: ${error}`);
+                        Logger.error(Logger.Type.O2TV, `Error during Kaltura login for service ${service}: ${error}`);
                         throw error;
                     });
     
@@ -231,10 +232,10 @@ module.exports = class O2TVSession {
                 if (!(service in ks_codes)) 
                     delete this.services[service];
             
-            this.o2tv.getApplication().getConsoleLog().info("O2TV", `Fetched services ${JSON.stringify(this.services)}`);
+            Logger.info(Logger.Type.O2TV, `Fetched services ${JSON.stringify(this.services)}`);
             return;
         } catch (error) {
-            this.o2tv.getApplication().getConsoleLog().error("O2TV", `Error while fetching services: ${error}`);
+            Logger.error(Logger.Type.O2TV, `Error while fetching services: ${error}`);
             throw error;
         }
     }
@@ -244,11 +245,11 @@ module.exports = class O2TVSession {
      */
     async loadSession() {
         try {
-            this.o2tv.getApplication().getConsoleLog().info("O2TV", "Loading session...");
+            Logger.info(Logger.Type.O2TV, "Loading session...");
     
             const { O2TV_Username: username, O2TV_Password: password, O2TV_DeviceId: deviceId } = this.o2tv.getApplication().getConfig();
             if (!(username && password && deviceId)) {
-                this.o2tv.getApplication().getConsoleLog().error("O2TV", "Credentials not found!");
+                Logger.error(Logger.Type.O2TV, "Credentials not found!");
                 return;
             }
     
@@ -256,7 +257,7 @@ module.exports = class O2TVSession {
             this.services = null;
     
             if (services) {
-                this.o2tv.getApplication().getConsoleLog().debug("O2TV", `Loaded services: ${JSON.stringify(services)}`);
+                Logger.debug(Logger.Type.O2TV, `Loaded services: ${JSON.stringify(services)}`);
     
                 let reset = 0;
                 this.services = {};
@@ -293,7 +294,7 @@ module.exports = class O2TVSession {
             }
     
             if (active) {
-                this.o2tv.getApplication().getConsoleLog().success("O2TV", "Session loaded successfully.");
+                Logger.info(Logger.Type.O2TV, "Session loaded successfully.");
                 await this.o2tv.channels.loadChannels();
                 return true;
             } 
@@ -308,11 +309,11 @@ module.exports = class O2TVSession {
                 this.saveSession();
             }
     
-            this.o2tv.getApplication().getConsoleLog().success("O2TV", "Session loaded successfully.");
+            Logger.info(Logger.Type.O2TV, "Session loaded successfully.");
             await this.o2tv.channels.loadChannels();
             return true;
         } catch (error) {
-            this.o2tv.getApplication().getConsoleLog().error("O2TV", `Error loading session: ${error.message}`);
+            Logger.error(Logger.Type.O2TV, `Error loading session: ${error.message}`);
         }
     }    
 
@@ -320,7 +321,7 @@ module.exports = class O2TVSession {
      * Saves the session data to storage.
      */
     saveSession() {
-        this.o2tv.getApplication().getConsoleLog().debug("O2TV", "Saving session...");
+        Logger.debug(Logger.Type.O2TV, "Saving session...");
         this.o2tv.getApplication().getConfig().O2TV_Services = this.services;
     }
 
