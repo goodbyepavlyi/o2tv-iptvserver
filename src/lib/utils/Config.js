@@ -4,14 +4,20 @@ const { version } = require("../../package.json");
 
 module.exports = class Config {
     constructor() {
-        this.configPath = this.EnvironmentInProduction ? "/data/config.json" : path.join(__dirname, "../../config.json");
+        this.configDirectory = path.join(__dirname, "../../data");
+        this.configPath = `${this.configDirectory}/config.json`;
         
         this.load();
     }
 
     load() {
-        if (fs.existsSync(this.configPath))
+        if (!fs.existsSync(this.configDirectory)) {
+            fs.mkdirSync(this.configDirectory);
+        }
+
+        if (fs.existsSync(this.configPath)) {
             return this.config = require(this.configPath);
+        }
 
         this.config = this.getDefaultConfig();
         this.save();
