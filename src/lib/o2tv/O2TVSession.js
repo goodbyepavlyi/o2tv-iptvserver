@@ -165,8 +165,6 @@ module.exports = class O2TVSession {
 
     async createSession() {
         try {
-            Logger.debug(Logger.Type.O2TV, `Getting user credentials... ${JSON.stringify({ username, password, deviceId })}`);
-    
             const anonymousLogin = await this.anonymousLogin()
                 .then((data) => data.result)
                 .catch((error) => {
@@ -208,7 +206,7 @@ module.exports = class O2TVSession {
     
             for (const service in ks_codes) {
                 const ksCode = ks_codes[service];
-                const data = await this.kalturaLogin(deviceId, jwtToken, ks, ksCode)
+                const data = await this.kalturaLogin(Config.o2tvDeviceId, jwtToken, ks, ksCode)
                     .catch((error) => {
                         Logger.error(Logger.Type.O2TV, `Error during Kaltura login for service ${service}: ${error}`);
                         throw error;
