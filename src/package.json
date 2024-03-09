@@ -5,7 +5,7 @@
     "author": "goodbyepavlyi",
     "license": "MIT",
     "scripts": {
-        "start": "node index.js",
+        "start": "node app.js",
         "build:css": "npx tailwindcss --watch -i public/css/build.css -o public/css/app.css"
     },
     "dependencies": {
