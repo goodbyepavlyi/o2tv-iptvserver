@@ -1,5 +1,6 @@
 const axios = require("axios");
 const { O2TVApiError, O2TVError, O2TVAuthenticationError } = require("./O2TVErrors");
+const Logger = require("../utils/Logger");
 
 module.exports = class O2TVApi {
     /**
@@ -132,25 +133,29 @@ module.exports = class O2TVApi {
 
     login = (username, password, deviceId) => new Promise(async (resolve, reject) => {
         try {
+            Logger.debug(Logger.Type.O2TV, `Sending login request for user ${username}...`);
             const data = await this.call({
                 url: `https://login-a-moje.o2.cz/cas-external/v1/login`,
                 method: "POST",
+                headers: this.getHeaders(),
                 data: {
                     username,
                     password,
                     udid: deviceId,
                     service: "https://www.new-o2tv.cz/"
-                },
-                headers: this.getHeaders()
+                }
             });
     
             if (data.err || !data.jwt || !data.refresh_token) {
+                Logger.error(Logger.Type.O2TV, `Failed to login user ${username}, invalid credentials`);
                 return reject(new O2TVAuthenticationError({ data }));
             }
-    
+
+            Logger.info(Logger.Type.O2TV, `User ${username} logged in successfully`);
             return resolve(data);
         } catch (error) {
             if (error instanceof O2TVAuthenticationError) {
+                Logger.error(Logger.Type.O2TV, `Failed to login user ${username}, invalid credentials`);
                 return reject(error);
             }
 

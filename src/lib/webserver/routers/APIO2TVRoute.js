@@ -2,7 +2,6 @@ const Config = require("../../Config");
 const { O2TVAuthenticationError, O2TVApiError } = require("../../o2tv/O2TVErrors");
 const APIResponse = require("../../types/APIResponse");
 const Route = require("../../types/Route");
-const ApiResponse = require("../ApiResponse");
 
 module.exports = class APIO2TVRoute extends Route {
     constructor(webserver) {
@@ -14,18 +13,16 @@ module.exports = class APIO2TVRoute extends Route {
             try {
                 const { username, password } = req.body;
                 if (!(username && password)) {
-                    return ApiResponse.MalformedRequest.send(res);
+                    return APIResponse.MISSING_REQUIRED_VALUES.send(res);
                 }
 
-                await this.webserver.application.getO2TV().getSession().login(username, password, null)
-                    .then(async () => {
-                        Config.o2tvUsername = username;
-                        Config.o2tvPassword = password;
-                        Config.o2tvDeviceId = this.webserver.application.getO2TV().getSession().createDeviceId();
+                await this.webserver.application.getO2TV().getApi().login(username, password, null);
+                Config.o2tvUsername = username;
+                Config.o2tvPassword = password;
+                Config.o2tvDeviceId = this.webserver.application.getO2TV().getSession().createDeviceId();
 
-                        await this.webserver.application.getO2TV().getSession().loadSession()
-                            .then(() => ApiResponse.Success.send(res));
-                    });
+                await this.webserver.application.getO2TV().getSession().loadSession();
+                return APIResponse.OK.send(res);
             } catch (error) {
                 if (error instanceof O2TVAuthenticationError) {
                     return APIResponse.AUTHENTICATION_ERROR.send(res);
