@@ -14,7 +14,7 @@ module.exports = class O2TVChannel {
         this.number = data.metas["ChannelNumber"].value;
         this.name = data.name;
         this.images = data.images;
-        this.logo = data.images.find(image => image.ratio === "16x9").url || `${data.images[0].url}/height/320/width/480`;
+        this.logo = data.images.find(image => image.imageTypeId == 18).url || `${data.images[0].url}/height/320/width/480`;
     }
 
     getPlaylistM3U = () => `#EXTINF:-1 catchup="append" catchup-days="7" catchup-source="&catchup_start_ts={utc}&catchup_end_ts={utcend}" tvg-id="${this.number}" tvh-epg="0" tvg-logo="${this.logo}",${this.name}\n${Config.webserverPublicUrl}/api/o2tv/stream/${this.id}`
