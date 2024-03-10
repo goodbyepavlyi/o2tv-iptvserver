@@ -12,7 +12,7 @@ module.exports = class O2TVSession {
 
         /** @type {Object.<string, import("../types/Types").O2TVService>} */
         this.services = {};
-        this.valid_to = -1;
+        this.validTo = -1;
     }
 
     getKS = () => this.ks;
@@ -35,7 +35,7 @@ module.exports = class O2TVSession {
      */
     _removeSession() {
         Config.o2tvServices = {};
-        this.valid_to = -1;
+        this.validTo = -1;
         this.createSession();
     }
 
@@ -86,7 +86,7 @@ module.exports = class O2TVSession {
                     enabled: this.services[ksCode] ? this.services[ksCode].enabled : 0,
                 };
             }
-            
+
             for (const service of Object.keys(this.services))  {
                 if (service in ksServices) {
                     continue;
@@ -111,7 +111,7 @@ module.exports = class O2TVSession {
             }
     
             this.services = {};
-            if (Config.o2tvServices) {
+            if (Config.o2tvServices && Object.keys(Config.o2tvServices).length > 0) {
                 Logger.debug(Logger.Type.O2TV, "Services found in config, loading session...");
                 this.services = Config.o2tvServices;
                 
@@ -143,6 +143,7 @@ module.exports = class O2TVSession {
 
                 active = true;
                 this.ks = ksService["ks"];
+                this.validTo = ksService["ks_expiry"];
                 Logger.info(Logger.Type.O2TV, `Service &c${ksService.ks_name}&r (&c${ksCode}&r) is active.`);
                 break;
             }
@@ -158,6 +159,7 @@ module.exports = class O2TVSession {
 
                 active = true;
                 this.ks = ksService["ks"];
+                this.validTo = ksService["ks_expiry"];
                 ksService["enabled"] = 1;
 
                 Logger.info(Logger.Type.O2TV, `Service &c${ksService.ks_name}&r (&c${ksService.ks_code}&r) is active.`);

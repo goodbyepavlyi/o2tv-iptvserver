@@ -7,17 +7,16 @@ module.exports = class Authentication extends Middleware {
         super(webserver);
     }
 
-    // TODO: check if o2tv is actually logged in etc..
-    isSessionActive(req, res, next) {
-        if (Config.o2tvUsername && Config.o2tvPassword && Config.o2tvDeviceId && req.path == Routes.Login) 
-            return res.redirect(Routes.Home);
-        
-        if (req.path == Routes.Login) 
-            return next();
-
-        if (!(Config.o2tvUsername && Config.o2tvPassword && Config.o2tvDeviceId)) 
+    isSessionActive = (req, res, next) => {
+        const sessionValid = this.webserver.application.getO2TV().getSession().validTo > Math.floor(Date.now() / 1000);
+        if (!sessionValid && req.path != Routes.Login) {
             return res.redirect(Routes.Login);
-        
+        }
+
+        if (sessionValid && req.path == Routes.Login) {
+            return res.redirect(Routes.Home);
+        }
+
         return next();
     }
 }
