@@ -172,6 +172,7 @@ module.exports = class O2TVEpg {
 
                         md = mdItem.value.replace('MosaicProgramExternalId=', '');
 
+                        // TODO: move this to a separate function in O2TVApi.js but i'm not sure yet what this is doing
                         const result = await this.o2tv.getApi().callList({
                             language: "ces",
                             ks: this.o2tv.getSession().getKS(),

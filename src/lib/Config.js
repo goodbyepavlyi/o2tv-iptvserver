@@ -124,5 +124,5 @@ module.exports = Config;
  * @property {string} o2tv.username
  * @property {string} o2tv.password
  * @property {string} o2tv.deviceId
- * @property {Object.<number, import("./Enums").O2TVService>} o2tv.services
+ * @property {Object.<string, import("./types/Types").O2TVService>} o2tv.services
  */

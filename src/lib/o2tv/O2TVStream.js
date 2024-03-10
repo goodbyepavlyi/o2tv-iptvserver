@@ -1,3 +1,4 @@
+const Utils = require("../utils/Utils");
 const { O2TVApiError } = require("./O2TVErrors");
 
 module.exports = class O2TVStream {
@@ -7,6 +8,26 @@ module.exports = class O2TVStream {
     constructor(o2tv) {
         this.o2tv = o2tv;
     }
+
+    async fetchStream(streamUrl) {
+        try {
+            let xml = streamUrl;
+            if (Utils.isURL(streamUrl)) {
+                const response = await fetch(streamUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch URL: ${streamUrl}`);
+                }
+
+                xml = await response.text();
+            }
+
+            const newBaseURL = streamUrl.split('/manifest.mpd')[0];
+            return xml.replace(/<BaseURL>.*<\/BaseURL>/, `<BaseURL>${newBaseURL}/</BaseURL>`);
+        } catch (error) {
+            throw new Error(`Failed to fetch or parse XML: ${error.message}`);
+        }
+    }
+
 
     async playStream(options) {
         const data = await this.o2tv.getApi().call({

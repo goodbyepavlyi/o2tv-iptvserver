@@ -26,5 +26,7 @@ module.exports = class Application {
     shutdown() {
         Logger.info(Logger.Type.Application, "Shutdown in progress..");
         Config.saveConfig();
+
+        process.exit(0);
     } 
 }

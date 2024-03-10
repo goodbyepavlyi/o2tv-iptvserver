@@ -32,6 +32,8 @@ module.exports = class O2TV {
     getEpg = () => this.epg;
 
     async load() {
-        await this.session.loadSession();
+        await this.session.loadSession()
+            .then(() => this.channels.loadChannels())
+            .catch((error) => this.application.shutdown());
     }
 }

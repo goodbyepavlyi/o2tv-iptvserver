@@ -1,31 +1,41 @@
+const Config = require("../Config");
+
 module.exports = class O2TVChannel {
+    /**
+     * @param {import("../o2tv/O2TV")} o2tv 
+     * @param {import("./Types").O2TVChannel} data 
+     */
     constructor(o2tv, data) {
         this.o2tv = o2tv;
+
         this.id = data.id;
-        this.number = data.number;
+        this.number = data.metas["ChannelNumber"].value;
         this.name = data.name;
-        this.logo = data.logo;
+        this.images = data.images;
+        this.logo = data.images.find(image => image.ratio === "16x9").url || `${data.images[0].url}/height/320/width/480`;
     }
 
-    getID() {
-        return this.id;
+    getPlaylistM3U(md) {
+        let playlistM3U = `#EXTINF:-1 catchup="append" catchup-days="7" catchup-source="&catchup_start_ts={utc}&catchup_end_ts={utcend}" tvg-id="${this.number}" tvh-epg="0" tvg-logo="${this.logo}",${this.name}`;
+
+        if (md) {
+            // TODO: maybe smth like MD: ID?
+            playlistM3U += ` MD: ${md.name}`;
+        }
+
+        playlistM3U += `\n${Config.webserverPublicUrl}/api/o2tv/stream/${this.id}`;
+        if (md) {
+            playlistM3U += `/${md.id}`;
+        }
+
+        return playlistM3U;
     }
 
-    getNumber() {
-        return this.number;
-    }
-
-    getName() {
-        return this.name;
-    }
-
-    getLogo() {
-        return this.logo;
-    }
-
+    // TODO: improve this later on
     async fetchMultiDimension(channelEpg) {
         let mds = [];
 
+        // move this to O2TVAPI.js
         const mdEpg = await this.o2tv.getApi().callList({
             language: "ces",
             ks: this.o2tv.getSession().getKS(),

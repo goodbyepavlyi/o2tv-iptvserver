@@ -1,6 +1,5 @@
 const Config = require("../../Config");
 const { O2TVAuthenticationError, O2TVApiError } = require("../../o2tv/O2TVErrors");
-const O2TVMPD = require("../../o2tv/O2TVMPD");
 const APIResponse = require("../../types/APIResponse");
 const Route = require("../../types/Route");
 const ApiResponse = require("../ApiResponse");
@@ -46,35 +45,33 @@ module.exports = class APIO2TVRoute extends Route {
                 const liveEpg = await this.webserver.application.getO2TV().getEpg().getLiveEpg();
 
                 const channels = [];
-
-                for (const channelNum of Object.keys(channelsList)) {
-                    const channel = channelsList[channelNum];
-
-                    // If channel doesn't have EPG
-                    if (!liveEpg[channel.getID()]) 
+                for (const channel of Object.values(channelsList)) {
+                    // If channel doesn't have EPG, skip it
+                    if (!liveEpg[channel.id]) {
                         continue;
+                    }
                     
-                    // If channel is a Multi-dimension stream
-                    if (liveEpg[channel.getID()].md) {
-                        const mdStreams = await channel.fetchMultiDimension(liveEpg[channel.getID()]);
+                    // If channel has Multi-dimension stream
+                    if (liveEpg[channel.id].md) {
+                        const mdStreams = await channel.fetchMultiDimension(liveEpg[channel.id]);
 
                         for (const mdStream of mdStreams) {
                             channels.push({
                                 channel: {
-                                    id: channel.getID(),
-                                    name: channel.getName(),
-                                    logo: channel.getLogo(),
+                                    id: channel.id,
+                                    name: channel.name,
+                                    logo: channel.logo
                                 },
                                 md: {
                                     id: mdStream.id,
                                     name: mdStream.name,
-                                    description: mdStream.description,
+                                    description: mdStream.description
                                 },
                                 epg: {
                                     title: mdStream.name,
                                     description: mdStream.description,
                                     startts: mdStream.startts,
-                                    endts: mdStream.endts,
+                                    endts: mdStream.endts
                                 }
                             });
                         }
@@ -84,15 +81,15 @@ module.exports = class APIO2TVRoute extends Route {
 
                     channels.push({
                         channel: {
-                            id: channel.getID(),
-                            name: channel.getName(),
-                            logo: channel.getLogo(),
+                            id: channel.id,
+                            name: channel.name,
+                            logo: channel.logo
                         },
                         epg: {
-                            title: liveEpg[channel.getID()].title,
-                            description: liveEpg[channel.getID()].description,
-                            startts: liveEpg[channel.getID()].startts,
-                            endts: liveEpg[channel.getID()].endts,
+                            title: liveEpg[channel.id].title,
+                            description: liveEpg[channel.id].description,
+                            startts: liveEpg[channel.id].startts,
+                            endts: liveEpg[channel.id].endts
                         }
                     });
                 }
@@ -111,46 +108,46 @@ module.exports = class APIO2TVRoute extends Route {
             }
         });
 
-        this.router.get("/playlist", async (req, res, next) => {
+        this.router.get('/playlist/:channelId?/:mdId?', async (req, res, next) => {
             try {
-                const { id, md } = req.query;
-
-                const channelsList = this.webserver.application.getO2TV().getChannels().getChannelsList('number');
+                const { channelId, mdId } = req.params;
+                const channelsList = this.webserver.application.getO2TV().getChannels().getChannelsList("number");
                 const liveEpg = await this.webserver.application.getO2TV().getEpg().getLiveEpg();
 
-                let playlistM3U = "#EXTM3U";
-
+                let playlistM3U = ["#EXTM3U"];
                 for (const channelNum of Object.keys(channelsList)) {
                     const channel = channelsList[channelNum];
 
                     // If channel doesn't have EPG
-                    if (!liveEpg[channel.getID()]) 
+                    if (!liveEpg[channel.id]) {
                         continue;
+                    }
 
                     // If id is specified and it doesn't match the channel's id
-                    if (id && channel.getID() != id) 
+                    if (channelId && channel.id != channelId) {
                         continue;
+                    }
                     
                     // If channel is a Multi-dimension stream
-                    if (liveEpg[channel.getID()].md) {
-                        const multiDimension = await channel.fetchMultiDimension(liveEpg[channel.getID()]);
-
-                        multiDimension.map((data) => {
-                            if (md && data.id != md) 
+                    if (liveEpg[channel.id].md) {
+                        (await channel.fetchMultiDimension(liveEpg[channel.id])).forEach(stream => {
+                            if (mdId && stream.id != mdId) {
                                 return;
+                            }
 
-                            playlistM3U += `\n#EXTINF:-1 catchup=\"append\" catchup-days=\"7\" catchup-source=\"&catchup_start_ts={utc}&catchup_end_ts={utcend}\" tvg-id=\"${channel.getNumber()}\" tvh-epg=\"0\" tvg-logo=\"${channel.getLogo()}\",${channel.getName()} MD: ${data.name}\n${Config.webserverPublicUrl}/api/o2tv/stream?id=${channel.getID()}&md=${data.id}`;
+                            playlistM3U.push(stream.getPlaylistM3U(stream));
                         });
 
                         continue;
                     }
 
-                    playlistM3U += `\n#EXTINF:-1 catchup=\"append\" catchup-days=\"7\" catchup-source=\"&catchup_start_ts={utc}&catchup_end_ts={utcend}\" tvg-id=\"${channel.getNumber()}\" tvh-epg=\"0\" tvg-logo=\"${channel.getLogo()}\",${channel.getName()}\n${Config.webserverPublicUrl}/api/o2tv/stream?id=${channel.getID()}`
+                    playlistM3U.push(channel.getPlaylistM3U());
                 }
 
-                res.setHeader("Content-Type", "text/plain")
-                    .setHeader("Content-Disposition", "attachment; filename=\"playlist.m3u\"")
-                    .send(playlistM3U);
+                return res.set({
+                    "Content-Type": "text/plain",
+                    "Content-Disposition": "attachment; filename=\"playlist.m3u\""
+                }).send(playlistM3U.join("\n"));
             } catch (error) {
                 if (error instanceof O2TVAuthenticationError) {
                     return APIResponse.AUTHENTICATION_ERROR.send(res);
@@ -164,21 +161,20 @@ module.exports = class APIO2TVRoute extends Route {
             }
         });
 
-        this.router.get("/stream", async (req, res, next) => {
+        this.router.get("/stream/:channelId/:mdId?", async (req, res, next) => {
             try {
-                const { id, md } = req.query;
-                if (!id) {
+                const { channelId, mdId } = req.params;
+                if (!channelId) {
                     return ApiResponse.MalformedRequest.send(res);
                 }
                 
-                await this.webserver.application.getO2TV().getStream().playLive(id, md)
-                    .then(async (streamUrl) => {
-                        const mpd = new O2TVMPD(streamUrl);
-                        const streamXML = await mpd.getXML();
+                const streamUrl = await this.webserver.application.getO2TV().getStream().playLive(channelId, mdId)
+                const streamXML = await this.webserver.application.getO2TV().getStream().fetchStream(streamUrl);
 
-                        res.set('Content-Type', 'application/dash+xml')
-                            .send(streamXML);
-                    });
+                return res.set({
+                    "Content-Type": "application/dash+xml",
+                    "Content-Disposition": "attachment; filename=\"stream.xml\""
+                }).send(streamXML);
             } catch (error) {
                 if (error instanceof O2TVAuthenticationError) {
                     return APIResponse.AUTHENTICATION_ERROR.send(res);
