@@ -3,6 +3,7 @@ const APIResponse = require("../../types/APIResponse");
 const Route = require("../../types/Route");
 const O2TVApiError = require("../../types/errors/O2TVApiError");
 const O2TVAuthenticationError = require("../../types/errors/O2TVAuthenticationError");
+const Logger = require("../../utils/Logger");
 
 module.exports = class APIO2TVRoute extends Route {
     constructor(webserver) {
@@ -39,19 +40,23 @@ module.exports = class APIO2TVRoute extends Route {
 
         this.router.get("/channels", async (req, res, next) => {
             try {
-                const channelsList = this.webserver.application.getO2TV().getChannels().getChannelsList('number');
+                const channelsList = await this.webserver.application.getO2TV().getChannels().getChannelsList('number');
                 const liveEpg = await this.webserver.application.getO2TV().getEpg().getLiveEpg();
 
-                const channels = [];
+                let channels = [];
                 for (const channel of Object.values(channelsList)) {
+                    const channelEpg = liveEpg[channel.id];
+
                     // If channel doesn't have EPG, skip it
-                    if (!liveEpg[channel.id]) {
+                    if (!channelEpg) {
+                        Logger.debug(Logger.Type.O2TV, `Channel ${channel.id} doesn't have EPG, skipping...`);
                         continue;
                     }
                     
                     // If channel has Multi-dimension stream
-                    if (liveEpg[channel.id].md) {
-                        const mdStreams = await channel.fetchMultiDimension(liveEpg[channel.id]);
+                    if (channelEpg.md) {
+                        Logger.debug(Logger.Type.O2TV, `Channel ${channel.id} has multi-dimension stream, fetching...`);
+                        const mdStreams = await channel.fetchMultiDimension(channelEpg.md);
 
                         for (const mdStream of mdStreams) {
                             channels.push({
@@ -84,10 +89,10 @@ module.exports = class APIO2TVRoute extends Route {
                             logo: channel.logo
                         },
                         epg: {
-                            title: liveEpg[channel.id].title,
-                            description: liveEpg[channel.id].description,
-                            startts: liveEpg[channel.id].startts,
-                            endts: liveEpg[channel.id].endts
+                            title: channelEpg.title,
+                            description: channelEpg.description,
+                            startts: channelEpg.startts,
+                            endts: channelEpg.endts
                         }
                     });
                 }
@@ -118,6 +123,7 @@ module.exports = class APIO2TVRoute extends Route {
 
                     // If channel doesn't have EPG
                     if (!liveEpg[channel.id]) {
+                        Logger.debug(Logger.Type.O2TV, `Channel ${channel.id} doesn't have EPG, skipping...`);
                         continue;
                     }
 
@@ -126,14 +132,14 @@ module.exports = class APIO2TVRoute extends Route {
                         continue;
                     }
                     
-                    // If channel is a Multi-dimension stream
+                    // If channel is streaming multi-dimensional stream
                     if (liveEpg[channel.id].md) {
-                        (await channel.fetchMultiDimension(liveEpg[channel.id])).forEach(stream => {
-                            if (mdId && stream.id != mdId) {
+                        (await channel.fetchMultiDimension(liveEpg[channel.id].md)).forEach(mdStream => {
+                            if (mdId && mdStream.id != mdId) {
                                 return;
                             }
 
-                            playlistM3U.push(stream.getPlaylistM3U(stream));
+                            playlistM3U.push(mdStream.getPlaylistM3U());
                         });
 
                         continue;

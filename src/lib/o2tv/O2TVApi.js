@@ -73,7 +73,7 @@ module.exports = class O2TVApi {
             const totalCount = response.result.totalCount;
             if (totalCount <= 0) {
                 fetch = false;
-                return;
+                return null;
             }
             
             for (const object of response.result.objects) {
@@ -250,6 +250,47 @@ module.exports = class O2TVApi {
             return resolve(data);
         } catch (error) {
             return reject(new O2TVApiError({ data: error }));
+        }
+    });
+
+    /**
+     * @returns {Promise<import("../types/Types").O2TVChannelProgram[]>}
+     */
+    getEPGInfo = (externalId) => this.o2tv.getApi().callList({
+        language: "ces",
+        ks: this.o2tv.getSession().getKS(),
+        clientTag: this.o2tv.getClientTag(),
+        apiVersion: this.o2tv.getApiVersion(),
+        filter: {
+            objectType: "KalturaSearchAssetFilter",
+            orderBy: "START_DATE_ASC",
+            kSql: `(and IsMosaicEvent='1' MosaicInfo='mosaic' (or externalId='${externalId}'))`
+        },
+        pager: {
+            objectType: "KalturaFilterPager",
+            pageSize: 200,
+            pageIndex: 1
+        }
+    })
+
+        /**
+     * @returns {Promise<import("../types/Types").O2TVChannelProgram[]>}
+     */
+
+    getMDEPGInfo = (externalId) => this.o2tv.getApi().callList({
+        language: "ces",
+        ks: this.o2tv.getSession().getKS(),
+        clientTag: this.o2tv.getClientTag(),
+        apiVersion: this.o2tv.getApiVersion(),
+        filter: {
+            objectType: "KalturaSearchAssetFilter",
+            orderBy: "START_DATE_ASC",
+            kSql: `(or externalId='${externalId}')`
+        },
+        pager: {
+            objectType: "KalturaFilterPager",
+            pageSize: 200,
+            pageIndex: 1
         }
     });
 }

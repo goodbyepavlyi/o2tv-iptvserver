@@ -16,12 +16,12 @@
  * @property {string} description
  * @property {number} createDate
  * @property {number} endDate
- * @property {Array<O2TVChannelImage>} images
- * @property {Object.<string, O2TVChannelMeta>} metas
+ * @property {Array<O2TVImage>} images
+ * @property {Object.<string, O2TVMeta>} metas
  */
 
 /**
- * @typedef {Object} O2TVChannelImage
+ * @typedef {Object} O2TVImage
  * @property {string} id
  * @property {number} imageTypeId
  * @property {string} imageTypeName
@@ -32,9 +32,38 @@
  */
 
 /**
- * @typedef {Object} O2TVChannelMeta
+ * @typedef {Object} O2TVMeta
  * @property {string} objectType
  * @property {any} value
+ */
+
+/**
+ * @typedef {Object} O2TVChannelProgram
+ * @property {number} id
+ * @property {string} externalId
+ * @property {string} name
+ * @property {string} description
+ * @property {number} createDate
+ * @property {number} startDate
+ * @property {number} endDate
+ * @property {number} epgChannelId
+ * @property {string} epgId
+ * @property {number} linearAssetId
+ * @property {Array<O2TVImage>} images
+ * @property {Object.<string, O2TVMeta>} metas
+ * @property {Object.<string, O2TVProgramTag>} tags
+ */
+
+/**
+ * @typedef {Object} O2TVProgramTag
+ * @property {string} objectType
+ * @property {Array<O2TVProgramTagObject>} objects
+ */
+
+/**
+ * @typedef {Object} O2TVProgramTagObject
+ * @property {string} objectType
+ * @property {string} value
  */
 
 module.exports = {
