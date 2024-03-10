@@ -1,4 +1,5 @@
 const Config = require("../Config");
+const O2TVMDChannel = require("./O2TVMDChannel");
 
 module.exports = class O2TVChannel {
     /**
@@ -85,14 +86,20 @@ module.exports = class O2TVChannel {
                     continue;
 
                 const epgItem = epg[0];
-                mds.push({
+                mds.push(new O2TVMDChannel({
                     id: epgItem.id, 
                     name: epgItem.name, 
                     description: epgItem.description, 
                     images: epgItem.images, 
                     startts: epgItem.startDate,
                     endts: epgItem.endDate,
-                });
+                    channel: {
+                        id: this.id,
+                        name: this.name,
+                        logo: this.logo,
+                        number: this.number
+                    }
+                }));
             }
         }
 

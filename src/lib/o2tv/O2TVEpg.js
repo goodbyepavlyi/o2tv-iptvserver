@@ -190,8 +190,13 @@ module.exports = class O2TVEpg {
                             apiVersion: this.o2tv.getApiVersion(),
                         });
 
-                        if (result.length > 0 && result[0].name)
+                        if (!result) {
+                            continue;
+                        }
+
+                        if (result.length > 0 && result[0].name) {
                             title = result[0].name;
+                        }
                     }
                 }
 

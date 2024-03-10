@@ -28,7 +28,6 @@ module.exports = class O2TVStream {
         }
     }
 
-
     async playStream(options) {
         const data = await this.o2tv.getApi().call({
             url: `https://${this.o2tv.getPartnerId()}.frp1.ott.kaltura.com/api_v3/service/multirequest`,
