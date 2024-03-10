@@ -169,7 +169,7 @@ module.exports = class APIO2TVRoute extends Route {
             try {
                 const { channelId, mdId } = req.params;
                 if (!channelId) {
-                    return ApiResponse.MalformedRequest.send(res);
+                    return APIResponse.MalformedRequest.send(res);
                 }
                 
                 const streamUrl = await this.webserver.application.getO2TV().getStream().playLive(channelId, mdId)
