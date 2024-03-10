@@ -23,17 +23,16 @@ module.exports = class O2TVChannels {
     }
 
     /**
-     * @returns {Object.<string, import("../types/O2TVChannel")>}
+     * @returns {Promise<Object.<string, import("../types/O2TVChannel")>>}
      */
-    getChannelsList(key) {
+    async getChannelsList(key) {
         if (!key) {
             return this.channels;
         }
         
         const channels = {};
-        // TODO: this probably can be optimized but i'm not sure rn
-        for (const channel in this.channels) {
-            channels[this.channels[channel][key]] = this.channels[channel];
+        for (const channel of Object.values(await this.getChannels())) {
+            channels[channel[key]] = channel;
         }
     
         return channels;

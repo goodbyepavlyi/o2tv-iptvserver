@@ -109,7 +109,7 @@ module.exports = class APIO2TVRoute extends Route {
         this.router.get('/playlist/:channelId?/:mdId?', async (req, res, next) => {
             try {
                 const { channelId, mdId } = req.params;
-                const channelsList = this.webserver.application.getO2TV().getChannels().getChannelsList("number");
+                const channelsList = await this.webserver.application.getO2TV().getChannels().getChannelsList("number");
                 const liveEpg = await this.webserver.application.getO2TV().getEpg().getLiveEpg();
 
                 let playlistM3U = ["#EXTM3U"];
