@@ -1,7 +1,6 @@
 const Config = require("../Config");
 const O2TVAccountError = require("../types/errors/O2TVAccountError");
 const Logger = require("../utils/Logger");
-const { O2TVAuthenticationError, O2TVError } = require("./O2TVErrors");
 
 module.exports = class O2TVSession {
     /**

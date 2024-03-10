@@ -1,6 +1,7 @@
 const axios = require("axios");
-const { O2TVApiError, O2TVError, O2TVAuthenticationError } = require("./O2TVErrors");
 const Logger = require("../utils/Logger");
+const O2TVAuthenticationError = require("../types/errors/O2TVAuthenticationError");
+const O2TVApiError = require("../types/errors/O2TVApiError");
 
 module.exports = class O2TVApi {
     /**
@@ -33,10 +34,10 @@ module.exports = class O2TVApi {
 
         try {
             const response = await axios({
-                url: options.url, 
-                method: options.method, 
-                data: options.data, 
-                headers: options.headers, 
+                url: options.url,
+                method: options.method,
+                headers: options.headers,
+                data: options.data
             });
 
             return response.data;
@@ -47,7 +48,8 @@ module.exports = class O2TVApi {
                 }
             }
 
-            throw new O2TVApiError(error.message, error.response);
+            // TODO: this is not right tbh
+            throw new O2TVApiError({ data: error });
         }
     }
 
@@ -59,13 +61,13 @@ module.exports = class O2TVApi {
             const response = await this.call({
                 url: `https://${this.o2tv.getPartnerId()}.frp1.ott.kaltura.com/api_v3/service/asset/action/list?format=1&clientTag=${this.o2tv.getClientTag()}`,
                 method: "POST",
-                data,
-                headers: this.getHeaders()
+                headers: this.getHeaders(),
+                data
             });
 
             if (response.err || response.error || !response.result || !response.result.hasOwnProperty('totalCount')) {
                 fetch = false;
-                throw new O2TVApiError(`Failed to fetch data from O2 TV. Error: ${JSON.stringify(response)}`, response);
+                throw new O2TVApiError({ data: response });
             }
 
             const totalCount = response.result.totalCount;
@@ -82,9 +84,6 @@ module.exports = class O2TVApi {
                 fetch = false;
             }
 
-            // let pager = response["pager"];
-            // pager["pageIndex"] =+ 1;
-            // response["pager"] = pager;
             data['pager']['pageIndex'] += 1;
         }
 
@@ -97,6 +96,8 @@ module.exports = class O2TVApi {
     getChannels = () => this.callList({
         language: "ces",
         ks: this.o2tv.getSession().getKS(),
+        clientTag: this.o2tv.getClientTag(),
+        apiVersion: this.o2tv.getApiVersion(),
         filter: {
             objectType: "KalturaChannelFilter",
             kSql: "(and asset_type='607')",
@@ -106,26 +107,24 @@ module.exports = class O2TVApi {
             objectType: "KalturaFilterPager",
             pageSize: 300,
             pageIndex: 1
-        },
-        clientTag: this.o2tv.getClientTag(),
-        apiVersion: this.o2tv.getApiVersion()
+        }
     })
 
     anonymousLogin = () => new Promise(async (resolve, reject) => {
         const data = await this.call({
             url: `https://${this.o2tv.getPartnerId()}.frp1.ott.kaltura.com/api_v3/service/ottuser/action/anonymousLogin?format=1&clientTag=${this.o2tv.getClientTag()}`,
             method: "POST",
+            headers: this.getHeaders(),
             data: {
                 language: "*",
                 partnerId: this.o2tv.getPartnerId(),
                 clientTag: this.o2tv.getClientTag(),
-                apiVersion: this.o2tv.getApiVersion(),
-            },
-            headers: this.getHeaders()
+                apiVersion: this.o2tv.getApiVersion()
+            }
         });
 
         if (data.err || !data.result || data.result.objectType != "KalturaLoginSession") {
-            reject(new O2TVApiError("An error occurred while attempting to login anonymously", data));
+            return reject(new O2TVApiError({ data }));
         }
 
         return resolve(data);
@@ -159,7 +158,7 @@ module.exports = class O2TVApi {
                 return reject(error);
             }
 
-            return reject(new O2TVError());
+            return reject(new O2TVApiError({ data: error }));
         }
     })
 
@@ -167,7 +166,10 @@ module.exports = class O2TVApi {
         const data = await this.call({
             url: `https://${this.o2tv.getPartnerId()}.frp1.ott.kaltura.com/api/p/${this.o2tv.getPartnerId()}/service/CZ/action/Invoke`,
             method: "POST",
+            headers: this.o2tv.getApi().getHeaders(),
+            // TODO: i think that the keys starting with _ may not be necessary
             data: {
+                ks,
                 intent: "Service List",
                 adapterData: [
                     {
@@ -194,14 +196,12 @@ module.exports = class O2TVApi {
                         value: 100,
                         relatedObjects: {}
                     }
-                ],
-                ks
-            },
-            headers: this.o2tv.getApi().getHeaders()
+                ]
+            }
         });
 
         if (data.err || !data.result || !data.result.adapterData || !data.result.adapterData.service_list) {
-            return reject(new O2TVError(data));
+            return reject(new O2TVApiError({ data }));
         }
 
         return resolve(data);
@@ -212,12 +212,16 @@ module.exports = class O2TVApi {
             const data = await this.call({
                 url: `https://${this.o2tv.getPartnerId()}.frp1.ott.kaltura.com/api_v3/service/ottuser/action/login?format=1&clientTag=${this.o2tv.getClientTag()}`,
                 method: "POST",
+                headers: this.getHeaders(),
                 data: {
                     language: "ces",
-                    ks,
-                    partnerId: this.o2tv.getPartnerId(),
                     username: "NONE",
                     password: "NONE",
+                    udid: deviceId,
+                    ks,
+                    partnerId: this.o2tv.getPartnerId(),
+                    clientTag: this.o2tv.getClientTag(),
+                    apiVersion: this.o2tv.getApiVersion(),
                     extraParams: {
                         token: {
                             objectType: "KalturaStringValue",
@@ -235,25 +239,17 @@ module.exports = class O2TVApi {
                             objectType: "KalturaStringValue",
                             value: ksCode
                         }
-                    },
-                    udid: deviceId,
-                    clientTag: this.o2tv.getClientTag(),
-                    apiVersion: this.o2tv.getApiVersion()
-                },
-                headers: this.getHeaders()
+                    }
+                }
             });
     
             if (data.err || !data.result || data.result.objectType  != "KalturaLoginResponse" || !data.result.loginSession) {
-                return reject(new O2TVError(data));
+                return reject(new O2TVApiError({ data }));
             }
     
             return resolve(data);
         } catch (error) {
-            if (error instanceof O2TVError) {
-                return reject(error);
-            }
-
-            return reject(new O2TVError());
+            return reject(new O2TVApiError({ data: error }));
         }
     });
 }

@@ -1,5 +1,5 @@
+const O2TVApiError = require("../types/errors/O2TVApiError");
 const Utils = require("../utils/Utils");
-const { O2TVApiError } = require("./O2TVErrors");
 
 module.exports = class O2TVStream {
     /**

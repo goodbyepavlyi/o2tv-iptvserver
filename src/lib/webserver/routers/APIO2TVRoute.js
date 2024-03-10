@@ -1,7 +1,8 @@
 const Config = require("../../Config");
-const { O2TVAuthenticationError, O2TVApiError } = require("../../o2tv/O2TVErrors");
 const APIResponse = require("../../types/APIResponse");
 const Route = require("../../types/Route");
+const O2TVApiError = require("../../types/errors/O2TVApiError");
+const O2TVAuthenticationError = require("../../types/errors/O2TVAuthenticationError");
 
 module.exports = class APIO2TVRoute extends Route {
     constructor(webserver) {
@@ -15,7 +16,7 @@ module.exports = class APIO2TVRoute extends Route {
                 if (!(username && password)) {
                     return APIResponse.MISSING_REQUIRED_VALUES.send(res);
                 }
-
+                
                 await this.webserver.application.getO2TV().getApi().login(username, password, null);
                 Config.o2tvUsername = username;
                 Config.o2tvPassword = password;
