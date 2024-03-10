@@ -38,5 +38,8 @@
  */
 
 module.exports = {
-    
+    O2TVService,
+    O2TVChannel,
+    O2TVChannelImage,
+    O2TVChannelMeta
 }
