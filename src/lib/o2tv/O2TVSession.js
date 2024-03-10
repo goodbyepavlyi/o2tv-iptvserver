@@ -16,6 +16,7 @@ module.exports = class O2TVSession {
     }
 
     getKS = () => this.ks;
+    isValid = () => this.validTo > Math.floor(Date.now() / 1000);
 
     createDeviceId = () => [...Array(15)]
         .map(() => Math.random().toString(36)[2])

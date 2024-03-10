@@ -8,7 +8,7 @@ module.exports = class Authentication extends Middleware {
     }
 
     isSessionActive = (req, res, next) => {
-        const sessionValid = this.webserver.application.getO2TV().getSession().validTo > Math.floor(Date.now() / 1000);
+        const sessionValid = this.webserver.application.getO2TV().getSession().isValid();
         if (!sessionValid && req.path != Routes.Login) {
             return res.redirect(Routes.Login);
         }
