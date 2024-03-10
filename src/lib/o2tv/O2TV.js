@@ -3,6 +3,7 @@ const O2TVSession = require("./O2TVSession");
 const O2TVStream = require("./O2TVStream");
 const O2TVApi = require("./O2TVApi");
 const O2TVEpg = require("./O2TVEpg");
+const Logger = require("../utils/Logger");
 
 module.exports = class O2TV {
     /**
@@ -39,7 +40,7 @@ module.exports = class O2TV {
                 await this.channels.loadChannels();
             }
         } catch (error) {
-            console.log(error);
+            Logger.error(Logger.Type.O2TV, "An error occurred while loading O2TV", error);
             this.application.shutdown();
         }
     }
