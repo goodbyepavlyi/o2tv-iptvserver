@@ -1,51 +1,32 @@
+const Config = require("./Config");
 const O2TV = require("./o2tv/O2TV");
-const Config = require("./utils/Config");
-const ConsoleLog = require("./utils/ConsoleLog");
-const WebServer = require("./webserver/WebServer");
+const Logger = require("./utils/Logger");
+const Webserver = require("./webserver/Webserver");
 
 module.exports = class Application {
     constructor() {
-        this.config = new Config();
-        this.consoleLog = new ConsoleLog();
-
-        this.webServer = new WebServer(this);
+        this.webserver = new Webserver(this);
         this.o2tv = new O2TV(this);
 
         this.start();
     }
 
-    getConfig() {
-        return this.config;
-    }
+    getWebserver = () => this.webserver;
+    getO2TV = () => this.o2tv;
 
-    getConsoleLog() {
-        return this.consoleLog;
-    }
+    async start() {
+        const launchTime = Date.now();
 
-    getWebServer() {
-        return this.webServer;
-    }
+        await this.o2tv.load();
+        this.webserver.start();
 
-    getO2TV() {
-        return this.o2tv;
-    }
-
-    start() {
-        return new Promise(async (resolve, reject) => {
-            let launchTime = Date.now();
-
-            await this.o2tv.load();
-            await this.webServer.start();
-            this.consoleLog.info("Application", `Started in ${(Date.now() - launchTime) / 1000}ms`);
-        });
-    }
+        Logger.info(Logger.Type.Application, `Started in ${(Date.now() - launchTime) / 1000}ms`);
+    };
 
     shutdown() {
-        return new Promise(async (resolve, reject) => {
-            this.consoleLog.info("Application", "Shutdown in progress..");
-    
-            this.config.save();
-            resolve();
-        });
-    }
+        Logger.info(Logger.Type.Application, "Shutdown in progress..");
+        Config.saveConfig();
+
+        process.exit(0);
+    } 
 }

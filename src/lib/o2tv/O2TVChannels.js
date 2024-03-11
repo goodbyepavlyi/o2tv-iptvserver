@@ -1,20 +1,20 @@
-const O2TV = require("./O2TV");
-const O2TVChannel = require("./types/O2TVChannel");
+const O2TVChannel = require("../types/O2TVChannel");
+const Logger = require("../utils/Logger");
 
 module.exports = class O2TVChannels {
     /**
-     * 
-     * @param {O2TV} o2tv 
+     * @param {import("./O2TV")} o2tv 
      */
     constructor(o2tv) {
         this.o2tv = o2tv;
 
-        this.validTo = -1;
+        /** @type {Object.<string, import("../types/O2TVChannel")>} */
         this.channels = {};
     }
 
     async getChannels() {
-        if (!this.validTo || this.validTo == -1 || this.validTo < Math.floor(Date.now() / 1000) || !this.channels) {
+        if (this.validTo < Math.floor(Date.now() / 1000) || Object.keys(this.channels).length <= 0) {
+            Logger.info(Logger.Type.O2TV, "Channels valid to is expired, reloading...");
             this.validTo = -1;
             await this.loadChannels();
         }
@@ -22,60 +22,39 @@ module.exports = class O2TVChannels {
         return this.channels;
     }
 
-    getChannelsList(byKey) {
-        let channels = {};
-        if (!byKey) 
-            channels = this.channels;
-        else 
-            for (const channel in this.channels) 
-                channels[this.channels[channel][byKey]] = this.channels[channel];
-
+    /**
+     * @returns {Promise<Object.<string, import("../types/O2TVChannel")>>}
+     */
+    async getChannelsList(key) {
+        if (!key) {
+            return this.channels;
+        }
+        
+        const channels = {};
+        for (const channel of Object.values(await this.getChannels())) {
+            channels[channel[key]] = channel;
+        }
+    
         return channels;
     }
 
     async loadChannels() {
+        Logger.info(Logger.Type.O2TV, "Loading channels...");
         this.channels = {};
 
-        const result = await this.o2tv.getApi().callList({
-            language: "ces", 
-            ks: this.o2tv.getSession().getKS(), 
-            filter: {
-                objectType: "KalturaChannelFilter", 
-                kSql: "(and asset_type='607')", 
-                idEqual: 355960, 
-            }, 
-            pager: {
-                objectType: "KalturaFilterPager", 
-                pageSize: 300, 
-                pageIndex: 1, 
-            }, 
-            clientTag: this.o2tv.getClientTag(), 
-            apiVersion: this.o2tv.getApiVersion(), 
-        });
-        
-        for (const channel of result) {
-            if (!channel.metas.ChannelNumber) 
+        const result = await this.o2tv.getApi().getChannels();
+        for (const data of result) {
+            if (!data.metas.ChannelNumber) {
+                Logger.warn(Logger.Type.O2TV, `Channel &c${data.name} &r(&c${data.id}) &rhas no channel number`);
                 continue;
-
-            let image;
-            if (channel.images.length > 1) {
-                for (const image in channel.images) 
-                    if (image.ratio == "16x9") 
-                        image = image.url;
-                
-                if (!image) 
-                    image = `${channel.images[0].url}/height/320/width/480`;
             }
 
-            this.channels[channel.id] = new O2TVChannel(this.o2tv, {
-                number: channel.metas.ChannelNumber.value,
-                name: channel.name,
-                id: channel.id,
-                logo: image,
-            });
+            this.channels[data.id] = new O2TVChannel(this.o2tv, data);
         }
 
         this.validTo = Math.floor(Date.now() / 1000) + 60*60*24;
+        Logger.info(Logger.Type.O2TV, `Loaded &c${Object.keys(this.channels).length} &rchannels`);
+
         return this.channels;
     }
 }

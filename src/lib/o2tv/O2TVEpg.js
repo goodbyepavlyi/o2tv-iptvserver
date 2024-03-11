@@ -2,8 +2,7 @@ const O2TV = require("./O2TV");
 
 module.exports = class O2TVEpg {
     /**
-     * 
-     * @param {O2TV} o2tv 
+     * @param {import("./O2TV")} o2tv 
      */
     constructor(o2tv) {
         this.o2tv = o2tv;
@@ -18,15 +17,15 @@ module.exports = class O2TVEpg {
             filter: {
                 objectType: "KalturaSearchAssetFilter",
                 orderBy: "START_DATE_ASC",
-                kSql: `(and start_date <= '${currentTime}' end_date  >= '${currentTime}' asset_type='epg' auto_fill= true)`,
+                kSql: `(and start_date <= '${currentTime}' end_date  >= '${currentTime}' asset_type='epg' auto_fill= true)`
             },
             pager: {
                 objectType: "KalturaFilterPager",
                 pageSize: 500,
-                pageIndex: 1,
+                pageIndex: 1
             },
             clientTag: this.o2tv.getClientTag(),
-            apiVersion: this.o2tv.getApiVersion(),
+            apiVersion: this.o2tv.getApiVersion()
         });
     }
     
@@ -37,28 +36,28 @@ module.exports = class O2TVEpg {
             filter: {
                 objectType: "KalturaSearchAssetFilter",
                 orderBy: "START_DATE_ASC",
-                kSql: `(and linear_media_id:'${id}' start_date >= '${fromTs}' end_date  <= '${toTs}' asset_type='epg' auto_fill=true)`,
+                kSql: `(and linear_media_id:'${id}' start_date >= '${fromTs}' end_date  <= '${toTs}' asset_type='epg' auto_fill=true)`
             },
             pager: {
                 objectType: "KalturaFilterPager",
                 pageSize: 500,
-                pageIndex: 1,
+                pageIndex: 1
             },
             clientTag: this.o2tv.getClientTag(),
-            apiVersion: this.o2tv.getApiVersion(),
+            apiVersion: this.o2tv.getApiVersion()
         });
     }
 
     async callEpgAPI(key, data) {
         const epg = {};
-
         const result = await this.o2tv.getApi().callList(data);
-
         const channels = this.o2tv.getChannels().getChannelsList('id', false);
 
+        // TODO: definitely there's a better way of doing whatever this is (tbh i don't even want to touch this)
         for (const item of result) {
-            if ((item.objectType != 'KalturaProgramAsset' || item.objectType != 'KalturaRecordingAsset') && !item.linearAssetId)
+            if ((item.objectType != 'KalturaProgramAsset' || item.objectType != 'KalturaRecordingAsset') && !item.linearAssetId) {
                 continue;
+            }
 
             let { id, linearAssetId: channelId, name: title, description, startDate: startts, endDate: endts, } = item;
             let cover = '';
@@ -173,6 +172,7 @@ module.exports = class O2TVEpg {
 
                         md = mdItem.value.replace('MosaicProgramExternalId=', '');
 
+                        // TODO: move this to a separate function in O2TVApi.js but i'm not sure yet what this is doing
                         const result = await this.o2tv.getApi().callList({
                             language: "ces",
                             ks: this.o2tv.getSession().getKS(),
@@ -190,8 +190,13 @@ module.exports = class O2TVEpg {
                             apiVersion: this.o2tv.getApiVersion(),
                         });
 
-                        if (result.length > 0 && result[0].name)
+                        if (!result) {
+                            continue;
+                        }
+
+                        if (result.length > 0 && result[0].name) {
                             title = result[0].name;
+                        }
                     }
                 }
 

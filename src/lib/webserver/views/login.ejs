@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O2 TV IPTV Server</title>
+    <link href="/public/css/app.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="w-full">
+        <div class="max-w-[1280px] mx-auto px-4">
+            <div class="flex flex-col items-center w-full pt-24 pb-16 gap-12">
+                <h1>O2TV Login</h1>
+
+                <form data-loginForm class="user-form flex flex-col gap-2 w-full">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-lg font-bold">Username</label>
+                        <input data-userinput="username" class="user-input" type="text" required>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-lg font-bold">Password</label>
+                        <input data-userinput="password" class="user-input" type="password" required>
+                    </div>
+                    
+                    <div class="flex flex-col gap-1 mt-4">
+                        <button type="submit" class="btn">Login</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <%- include("partials/footer.ejs") %>
+    
+    <script src="/public/lib/js/jquery-3.7.0.min.js"></script>
+    <script src="/public/js/Logger.js"></script>
+    <script src="/public/js/API.js"></script>
+    <script src="/public/js/Application.js"></script>
+
+    <script>
+        const application = new Application();
+
+        const loginForm = $("[data-loginForm]");
+        const usernameField = $("[data-userinput='username']");
+        const passwordField = $("[data-userinput='password']");
+
+        loginForm.on("submit", (event) => {
+            event.preventDefault();
+
+            const loginButton = loginForm.find(":submit");
+            const username = usernameField.val();
+            const password = passwordField.val();
+
+            return API.o2tvLogin(username, password, (error, data) => {
+                if (error) {
+                    loginButton.prop("disabled", true).addClass("red").text(error.displayMessage);
+                    setTimeout(() => loginButton.prop("disabled", false).removeClass("red").text("Login"), 2500);
+                    return;
+                }
+
+                setTimeout(() => window.location.href = "/", 1000);
+                loginButton.prop("disabled", true).addClass("green");
+            });
+        });
+    </script>
+</body>
+
+</html>
