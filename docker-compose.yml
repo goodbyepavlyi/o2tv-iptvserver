@@ -4,17 +4,8 @@ services:
   o2tv-iptvserver:
     container_name: "o2tv-iptvserver"
     image: "goodbyepavlyi/o2tv-iptvserver:latest"
-    environment:
-      - WEBSERVER_PUBLICURL=http://<IP_ADDRESS>:<PORT>
-
-      # Optional
-      # - WEBSERVER_LISTENADDRESS=0.0.0.0
-      # - WEBSERVER_PORT=3000
-      # - O2TV_USERNAME=example@example.com
-      # - O2TV_PASSWORD=example
-      # - O2TV_DEVICEID=example
-    volumes:
-      - "./o2tv-iptvserver:/data"
     ports:
       - "3000:3000"
+    volumes:
+      - "./o2tv-iptvserver:/app/data"
     restart: "unless-stopped"
