@@ -13,7 +13,7 @@ module.exports = class O2TVChannels {
     }
 
     async getChannels() {
-        if (this.validTo < Math.floor(Date.now() / 1000) || !this.channels) {
+        if (this.validTo < Math.floor(Date.now() / 1000) || Object.keys(this.channels).length <= 0) {
             Logger.info(Logger.Type.O2TV, "Channels valid to is expired, reloading...");
             this.validTo = -1;
             await this.loadChannels();
