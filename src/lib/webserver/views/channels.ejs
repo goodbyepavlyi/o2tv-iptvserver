@@ -92,7 +92,7 @@
                         .attr("src", "/public/img/icons/download.svg")
                 )
                 .on("click", function() {
-                    let playlistUrl = `/api/o2tv/playlist?id=${channel.id}`;
+                    let playlistUrl = `/api/o2tv/playlist/${channel.id}`;
 
                     if (md && md.id) 
                         playlistUrl += `&md=${md.id}`;
