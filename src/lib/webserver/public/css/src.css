@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+::-webkit-scrollbar {
+    @apply w-2 bg-neutral-700;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-indigo-500;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-neutral-100;
+}
+
+h1 {
+    @apply text-4xl;
+}
+
+h2 {
+    @apply text-3xl;
+}
+
+p, label, span, input {
+    @apply text-neutral-200;
+}
+
+a {
+    @apply cursor-pointer text-indigo-500;
+
+    &:hover {
+        @apply text-indigo-600;
+    }
+}
+
+body {
+    @apply bg-neutral-900;
+}
+
+.btn {
+    @apply py-2 px-4 rounded-md bg-indigo-500 text-white font-semibold transition ease-in-out duration-300;
+
+    &:hover {
+        @apply bg-indigo-600 text-white;
+    }
+
+    &:disabled {
+        @apply bg-neutral-700 cursor-not-allowed;
+    }
+
+    &.big {
+        @apply text-2xl font-bold py-3 px-6;
+    }
+
+    &.dark {
+        @apply bg-indigo-700;
+
+        &:hover {
+            @apply bg-indigo-600;
+        }
+    }
+
+    &.green {
+        @apply bg-green-500;
+
+        &:hover {
+            @apply bg-green-600;
+        }
+    }
+
+    &.red {
+        @apply bg-red-500;
+
+        &:hover {
+            @apply bg-red-600;
+        }
+    }
+}
+
+.updater {
+    @apply bg-indigo-500 w-full max-w-3xl text-sm rounded-md shadow-lg p-4 mb-4 hidden;
+
+    & .dialog {
+        @apply container mx-auto flex flex-row flex-auto items-center;
+
+        & h1 {
+            @apply text-xl font-bold;
+        }
+    }
+}
+
+.user-form {
+    @apply w-full lg:w-1/2 flex flex-col bg-neutral-800 rounded-md p-4;
+
+    & .user-input {
+        @apply w-full rounded py-2 px-4 bg-neutral-700;
+    
+        &:focus {
+            @apply outline-none;
+        }
+    
+        &::placeholder {
+            @apply text-white;
+        }
+    }
+}
+
+.channelList {
+    @apply container mx-auto grid md:grid-cols-2 gap-4 py-4;
+
+    & .channel {
+        @apply p-4 flex items-center bg-neutral-800 rounded-md shadow-md gap-2;
+
+        & .channelLogo {
+            @apply h-12 w-auto m-1;
+        }
+
+        & .channelName {
+            @apply text-lg font-semibold;
+
+            &.channelEpg {
+                @apply text-white text-sm;
+            }
+        }
+
+        & .channelEpg {
+            @apply text-white text-sm;
+        }
+
+        & .channelProgressBar {
+            @apply h-2 w-full bg-white rounded-md;
+
+            .progress {
+                @apply h-full bg-indigo-500 rounded-md;
+            }
+        }
+
+        & .programInfo {
+            @apply space-y-1;
+        }
+
+        & .downloadButton {
+            @apply h-8 w-9 px-2 py-2;
+
+            & .icon {
+                @apply h-4 w-4;
+            }
+        }
+    }
+}

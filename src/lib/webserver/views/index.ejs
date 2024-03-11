@@ -8,21 +8,36 @@
     <link href="/public/css/app.css" rel="stylesheet">
 </head>
 
-<body class="flex flex-col min-h-screen bg-neutral-100 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
+<body>
     <%- include("partials/navbar.ejs") %>
-    
-    <main class="container mx-auto mt-4 p-4 flex-grow">
-        <p data-userNotifyText class="text-sm font-semibold hidden"></p>
-        <%- include("partials/updater.ejs") %>
 
-        <h1 class="text-2xl font-semibold mb-4">Welcome to O2 TV IPTV Server</h1>
-        <p>Choose from the navigation links above to perform the desired action.</p>
-    </main>
+    <div class="w-full">
+        <div class="max-w-[1280px] mx-auto px-4">
+            <%- include("partials/updater.ejs") %>
+
+            <div class="flex flex-col items-center w-full pt-8 pb-16 gap-8">
+                <div class="flex container mx-auto justify-between items-center">
+                    <h1 class="text-2xl font-semibold mb-4">Channels</h1>
+                    <a data-downloadPlaylist class="btn">Download Playlist</a>
+                </div>
+                
+                <div data-channelList class="channelList"></div>
+            </div>
+        </div>
+    </div>
 
     <%- include("partials/footer.ejs") %>
 
     <script src="/public/lib/js/jquery-3.7.0.min.js"></script>
-    <script src="/public/js/app.js"></script>
+    <script src="/public/js/Logger.js"></script>
+    <script src="/public/js/API.js"></script>
+    <script src="/public/js/Application.js"></script>
+    <script src="/public/js/pages/IndexPage.js"></script>
+
+    <script>
+        const app = new Application();
+        const page = new Page(app);
+    </script>
 </body>
 
 </html>

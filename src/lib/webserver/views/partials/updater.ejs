@@ -1,15 +1,12 @@
 <div class="flex justify-center">
-    <div data-updater class="bg-indigo-500 w-full max-w-3xl text-sm font-small rounded-md shadow-lg p-4 mb-4 hidden">
-        <div class="container mx-auto flex flex-row flex-auto items-center">
+    <div data-updater class="updater">
+        <div class="dialog">
             <div class="flex-grow">
-                <p class="font-bold">There is an update available!</p>
-                <p data-updater-changelog></p>
+                <h1>Update available</h1>
+                <p data-updaterChangelog></p>
             </div>
 
-            <a href="https://github.com/goodbyepavlyi/o2tv-iptvserver#updating" target="_blank"
-                class="bg-indigo-700 hover:bg-indigo-800 py-2 px-4 rounded-md font-sm font-semibold transition-all">
-                Update
-            </a>
+            <a href="https://github.com/goodbyepavlyi/o2tv-iptvserver#updating" target="_blank" class="btn dark">Update</a>
         </div>
     </div>
 </div>
