@@ -1,6 +1,6 @@
 const Route = require("../../types/Route");
 
-module.exports = class WebRoute extends Route {
+module.exports = class RootRoute extends Route {
     constructor(webserver) {
         super(webserver);
     }

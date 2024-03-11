@@ -34,7 +34,7 @@ module.exports = class Webserver {
 
         this.app.use("/favicon.ico", express.static(path.resolve(__dirname, "./public/favicon.ico")))
         this.app.use("/public", express.static(path.join(__dirname, "./public")));
-        this.app.use("/", this.routers["Root"].router);
+        this.app.use("/", this.routers["RootRoute"].router);
 
         this.app.use("/api", this.routers["APIRoute"].router);
         this.app.use("/api/o2tv", this.routers["APIO2TVRoute"].router);
