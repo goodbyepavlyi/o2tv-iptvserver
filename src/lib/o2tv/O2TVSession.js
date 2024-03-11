@@ -1,5 +1,5 @@
 const Config = require("../Config");
-const O2TVAccountError = require("../types/errors/O2TVAccountError");
+const O2TVError = require("../types/errors/O2TVError");
 const Logger = require("../utils/Logger");
 
 module.exports = class O2TVSession {
@@ -65,7 +65,7 @@ module.exports = class O2TVSession {
     
             if (!ksServices || Object.keys(ksServices).length < 1) {
                 Logger.error(Logger.Type.O2TV, "No services found (possible that the account doesn't have any?).");
-                throw new O2TVAccountError("Account doesn't have any services.");
+                throw new O2TVError({ type: O2TVError.Type.NoAccountServices });
             }
 
             Logger.debug(Logger.Type.O2TV, "Fetched services:", Object.entries(ksServices).map(([ ksCode, ksName ]) => `&c${ksName}&r (&c${ksCode}&r)`).join(", "));

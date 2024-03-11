@@ -1,7 +1,6 @@
 const axios = require("axios");
 const Logger = require("../utils/Logger");
-const O2TVAuthenticationError = require("../types/errors/O2TVAuthenticationError");
-const O2TVApiError = require("../types/errors/O2TVApiError");
+const O2TVError = require("../types/errors/O2TVError");
 
 module.exports = class O2TVApi {
     /**
@@ -44,12 +43,11 @@ module.exports = class O2TVApi {
         } catch (error) {
             if (error.response) {
                 if (error.response.status == 401) {
-                    throw new O2TVAuthenticationError({ data: error.response.data });
+                    throw new O2TVError({ type: O2TVError.Type.Unauthorized, data: error.response.data });
                 }
             }
 
-            // TODO: this is not right tbh
-            throw new O2TVApiError({ data: error });
+            throw new O2TVError({ data: error });
         }
     }
 
@@ -67,7 +65,7 @@ module.exports = class O2TVApi {
 
             if (response.err || response.error || !response.result || !response.result.hasOwnProperty('totalCount')) {
                 fetch = false;
-                throw new O2TVApiError({ data: response });
+                throw new O2TVError({ data: response });
             }
 
             const totalCount = response.result.totalCount;
@@ -124,7 +122,7 @@ module.exports = class O2TVApi {
         });
 
         if (data.err || !data.result || data.result.objectType != "KalturaLoginSession") {
-            return reject(new O2TVApiError({ data }));
+            return reject(new O2TVError({ data }));
         }
 
         return resolve(data);
@@ -147,18 +145,20 @@ module.exports = class O2TVApi {
     
             if (data.err || !data.jwt || !data.refresh_token) {
                 Logger.error(Logger.Type.O2TV, `Failed to login user ${username}, invalid credentials`);
-                return reject(new O2TVAuthenticationError({ data }));
+                return reject(new O2TVError({ type: O2TVError.Type.Unauthorized, data }));
             }
 
             Logger.info(Logger.Type.O2TV, `User ${username} logged in successfully`);
             return resolve(data);
         } catch (error) {
-            if (error instanceof O2TVAuthenticationError) {
-                Logger.error(Logger.Type.O2TV, `Failed to login user ${username}, invalid credentials`);
-                return reject(error);
+            if (error instanceof O2TVError) {
+                if (error.type == O2TVError.Type.Unauthorized) {
+                    Logger.error(Logger.Type.O2TV, `Failed to login user ${username}, invalid credentials`);
+                    return reject(error);
+                }
             }
 
-            return reject(new O2TVApiError({ data: error }));
+            return reject(new O2TVError({ data: error }));
         }
     })
 
@@ -201,7 +201,7 @@ module.exports = class O2TVApi {
         });
 
         if (data.err || !data.result || !data.result.adapterData || !data.result.adapterData.service_list) {
-            return reject(new O2TVApiError({ data }));
+            return reject(new O2TVError({ data }));
         }
 
         return resolve(data);
@@ -244,12 +244,12 @@ module.exports = class O2TVApi {
             });
     
             if (data.err || !data.result || data.result.objectType  != "KalturaLoginResponse" || !data.result.loginSession) {
-                return reject(new O2TVApiError({ data }));
+                return reject(new O2TVError({ data }));
             }
     
             return resolve(data);
         } catch (error) {
-            return reject(new O2TVApiError({ data: error }));
+            return reject(new O2TVError({ data: error }));
         }
     });
 

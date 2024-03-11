@@ -25,4 +25,7 @@ module.exports = class APIResponse {
 
     static AUTHENTICATION_ERROR = new APIResponse({ statusCode: 401, code: 1000, error: "AUTHENTICATION_ERROR" });
     static O2TV_API_ERROR = new APIResponse({ statusCode: 500, code: 1001, error: "O2TV_API_ERROR" });
+
+    static CHANNEL_WITHOUT_EPG = new APIResponse({ statusCode: 500, code: 2000, error: "CHANNEL_WITHOUT_EPG" });
+    static ACCOUNT_PLAYBACK_CONCURRENCY_LIMITATION = new APIResponse({ statusCode: 500, code: 2001, error: "ACCOUNT_PLAYBACK_CONCURRENCY_LIMITATION" }); 
 }

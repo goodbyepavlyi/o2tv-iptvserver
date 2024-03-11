@@ -1,8 +1,7 @@
 const Config = require("../../Config");
 const APIResponse = require("../../types/APIResponse");
 const Route = require("../../types/Route");
-const O2TVApiError = require("../../types/errors/O2TVApiError");
-const O2TVAuthenticationError = require("../../types/errors/O2TVAuthenticationError");
+const O2TVError = require("../../types/errors/O2TVError");
 const Logger = require("../../utils/Logger");
 
 module.exports = class APIO2TVRoute extends Route {
@@ -26,12 +25,10 @@ module.exports = class APIO2TVRoute extends Route {
                 await this.webserver.application.getO2TV().getSession().loadSession();
                 return APIResponse.OK.send(res);
             } catch (error) {
-                if (error instanceof O2TVAuthenticationError) {
-                    return APIResponse.AUTHENTICATION_ERROR.send(res);
-                }
-                
-                if (error instanceof O2TVApiError) {
-                    return APIResponse.O2TV_API_ERROR.send(res);
+                if (error instanceof O2TVError) {
+                    if (error.type === O2TVError.Type.Unauthorized) {
+                        return APIResponse.AUTHENTICATION_ERROR.send(res);
+                    }
                 }
 
                 return next(error);
@@ -99,14 +96,6 @@ module.exports = class APIO2TVRoute extends Route {
 
                 return APIResponse.OK.send(res, { channels });
             } catch (error) {
-                if (error instanceof O2TVAuthenticationError) {
-                    return APIResponse.AUTHENTICATION_ERROR.send(res);
-                }
-                
-                if (error instanceof O2TVApiError) {
-                    return APIResponse.O2TV_API_ERROR.send(res);
-                }
-                
                 return next(error);
             }
         });
@@ -153,14 +142,6 @@ module.exports = class APIO2TVRoute extends Route {
                     "Content-Disposition": "attachment; filename=\"playlist.m3u\""
                 }).send(playlistM3U.join("\n"));
             } catch (error) {
-                if (error instanceof O2TVAuthenticationError) {
-                    return APIResponse.AUTHENTICATION_ERROR.send(res);
-                }
-                
-                if (error instanceof O2TVApiError) {
-                    return APIResponse.O2TV_API_ERROR.send(res);
-                }
-
                 return next(error);
             }
         });
@@ -171,7 +152,7 @@ module.exports = class APIO2TVRoute extends Route {
                 if (!channelId) {
                     return APIResponse.MalformedRequest.send(res);
                 }
-                
+
                 const streamUrl = await this.webserver.application.getO2TV().getStream().playLive(channelId, mdId)
                 const streamXML = await this.webserver.application.getO2TV().getStream().fetchStream(streamUrl);
 
@@ -180,11 +161,17 @@ module.exports = class APIO2TVRoute extends Route {
                     "Content-Disposition": "attachment; filename=\"stream.xml\""
                 }).send(streamXML);
             } catch (error) {
-                if (error instanceof O2TVAuthenticationError) {
-                    return APIResponse.AUTHENTICATION_ERROR.send(res);
-                }
-                
-                if (error instanceof O2TVApiError) {
+                if (error instanceof O2TVError) {
+                    if (error.type === O2TVError.Type.ChannelWithoutEpg) {
+                        return APIResponse.CHANNEL_WITHOUT_EPG.send(res);
+                    }
+                    
+                    if (error.type === O2TVError.Type.AccountPlaybackConcurrencyLimitation) {
+                        // TODO: respond with a image
+                        return APIResponse.ACCOUNT_PLAYBACK_CONCURRENCY_LIMITATION.send(res);
+                    }
+
+                    Logger.error(Logger.Type.O2TV, "An error occurred while playing stream", error);
                     return APIResponse.O2TV_API_ERROR.send(res);
                 }
 
