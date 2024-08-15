@@ -1,18 +1,21 @@
-FROM node:18-alpine
+FROM node:18-alpine AS builder
 
 WORKDIR /app
-
-# Copy the package.json and package-lock.json
-COPY src/package*.json ./
-
-# Install npm dependencies
+COPY ./src/package.json /app
+COPY ./src/package-lock.json /app
 RUN npm ci --omit=dev
 
-# Copy the application
-COPY src/ /app
+FROM node:18-alpine
+# Copy build result to a new image (saves a lot of disk space)
+COPY --from=builder /app /app
+COPY ./src /app
 
-# Expose ports
-EXPOSE 3000
+# Move node_modules one directory up, so during development
+# we don't have to mount it in a volume.
+# This results in much faster reloading!
+RUN mv /app/node_modules /node_modules
 
-# Run application
-CMD ["node", "index.js"]
+EXPOSE 3000/tcp
+
+WORKDIR /app
+CMD ["node", "app.js"]
