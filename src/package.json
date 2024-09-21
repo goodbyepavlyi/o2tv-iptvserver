@@ -9,8 +9,8 @@
         "build:css": "npx tailwindcss --watch -i lib/webserver/public/css/src.css -o lib/webserver/public/css/app.css"
     },
     "dependencies": {
+        "ejs": "^3.1.10",
         "axios": "^1.7.4",
-        "ejs": "^3.1.9",
         "express": "^4.21.0",
         "xml2js": "^0.6.2"
     },
