@@ -7,5 +7,6 @@
     "2.2.0": "New features: Added support for new features.",
     "2.2.1": "Bump express from 4.18.3 to 4.19.2",
     "2.2.2": "Bump axios from 1.6.7 to 1.7.4",
-    "2.2.3": "Bump braces from 3.0.2 to 3.0.3"
+    "2.2.3": "Bump braces from 3.0.2 to 3.0.3",
+    "2.2.4": "Bump several npm packages"
 }
