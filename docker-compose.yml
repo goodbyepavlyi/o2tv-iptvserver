@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   o2tv-iptvserver:
     container_name: "o2tv-iptvserver"
