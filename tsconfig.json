@@ -9,8 +9,9 @@
         "resolveJsonModule": true
     },
     "include": [
-        "src/**/*"
-, "tsconfig.json"    ],
+        "src/**/*",
+        "tsconfig.json"
+    ],
     "exclude": [
         "node_modules"
     ]
