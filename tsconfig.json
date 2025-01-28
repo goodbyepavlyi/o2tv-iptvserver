@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "target": "ES2021",
+        "module": "CommonJS",
+        "strict": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true
+    },
+    "include": [
+        "src/**/*"
+, "tsconfig.json"    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

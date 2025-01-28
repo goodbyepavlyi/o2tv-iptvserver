@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <link rel="stylesheet" href="/app.css">
+    <link rel="stylesheet" href="/lib/css/toastify.min.css">
+    
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <title><%= typeof title !== 'undefined' ?  `${title} | O2TV IPTV Server` : 'O2TV IPTV Server' %></title>
+    <%- typeof head !== 'undefined' ? head : '' %>
+</head>
+<body>
+    <div class="h-6 block"></div>
+
+    <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between w-full py-4">
+            <a href="/">
+                <h1 class="text-2xl">O2TV IPTV Server</h1>
+            </a>
+        </div>
+    </div>
+
+    <main class="w-full">
+        <div class="max-w-[1280px] mx-auto px-4">
+            <% if (locals.Update) { %>
+                <div class="flex justify-center">
+                    <div data-updater class="updater">
+                        <div class="dialog">
+                            <div class="flex-grow">
+                                <h1>New update released - v<%- Update.Version %></h1>
+                                <p><%- Update.Changelog %></p>
+                            </div>
+                
+                            <a href="https://github.com/goodbyepavlyi/o2tv-iptvserver#updating" target="_blank" class="btn dark">Update</a>
+                        </div>
+                    </div>
+                </div>
+            <% } %>
+
+            <%- body %>
+        </div>
+    </main>
+
+    <footer class="my-4 text-center">
+        <p>Made by <a href="https://github.com/goodbyepavlyi" target="_blank">goodbyepavlyi</a>.</p>
+        <p>Not associated with <strong>O2 Czech Republic a.s.</strong></p>
+    </footer>
+
+    <script src="/lib/js/jquery-3.7.1.min.js"></script>
+    <script src="/js/Logger.js"></script>
+    <script src="/js/API.js"></script>
+    <%- script %>
+</body>
+</html>

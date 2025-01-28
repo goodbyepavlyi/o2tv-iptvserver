@@ -1,0 +1,31 @@
+{
+    "name": "o2tv-iptvserver",
+    "version": "3.0.0",
+    "description": "O2TV IPTV Server",
+    "author": "goodbyepavlyi",
+    "license": "MIT",
+    "scripts": {
+        "start": "tsx src/index.ts",
+        "dev": "nodemon -w ./src -e ts -x tsx src/index.ts -dev",
+        "build:css": "npx tailwindcss -i ./src/Express/Public/src.css -o ./src/Express/Public/app.css -m",
+        "dev:css": "nodemon -w ./src/Express/Views -w ./src/Express/Public/src.css -e ejs -x npm run build:css"
+    },
+    "dependencies": {
+        "axios": "^1.7.9",
+        "dotenv": "^16.4.7",
+        "ejs": "^3.1.10",
+        "express": "^4.21.2",
+        "express-ejs-layouts": "^2.5.1",
+        "tsx": "^4.19.2",
+        "xml2js": "^0.6.2"
+    },
+    "devDependencies": {
+        "@tailwindcss/cli": "^4.0.0",
+        "@types/express": "^5.0.0",
+        "@types/express-ejs-layouts": "^2.5.4",
+        "autoprefixer": "^10.4.20",
+        "nodemon": "^3.1.9",
+        "tailwindcss": "^4.0.0",
+        "typescript": "^5.7.3"
+    }
+}

@@ -1,9 +1,13 @@
 services:
   o2tv-iptvserver:
     container_name: "o2tv-iptvserver"
-    image: "goodbyepavlyi/o2tv-iptvserver:latest"
+    # image: "goodbyepavlyi/o2tv-iptvserver:latest"
+    build:
+      context: .
     ports:
       - "3000:3000"
     volumes:
-      - "./o2tv-iptvserver:/app/data"
+      - "./Data:/App/Data"
+    env_file:
+      - ".env"
     restart: "unless-stopped"

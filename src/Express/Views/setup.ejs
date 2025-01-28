@@ -1,0 +1,95 @@
+<div data-setupId="regionSelect">
+    <div class="flex flex-col items-center w-full pt-24 pb-16 gap-12">
+        <h1>Select your provider</h1>
+    
+        <form class="user-form flex flex-col gap-2 w-full">
+            <div class="flex flex-row justify-center gap-4">
+                <div data-country="CZ" class="regionFlag">
+                    <img src="/img/flags/czech.svg" alt="Czech Republic">
+                    <label>o2tv.cz</label>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1 mt-4">
+                <button type="submit" class="btn">Continue</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div data-setupId="login" class="hidden">
+    <div class="flex flex-col items-center w-full pt-24 pb-16 gap-12">
+        <h1>Enter your login details</h1>
+
+        <form class="user-form flex flex-col gap-2 w-full">
+            <div class="flex flex-col gap-1">
+                <label class="text-lg font-bold">Username</label>
+                <input data-inputType="username" class="user-input" type="text" required>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-lg font-bold">Password</label>
+                <input data-inputType="password" class="user-input" type="password" required>
+            </div>
+            
+            <div class="flex flex-col gap-1 mt-4">
+                <button type="submit" class="btn">Login</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let RequestInProgress;
+    const Settings = {};
+
+    // SETUP - PHASES
+    const setupRegion = $('[data-setupId="regionSelect"]');
+    const setupLogin = $('[data-setupId="login"]');
+
+    // SETUP - REGION SELECT
+    const regionFlags = setupRegion.find('[data-country]');
+    const regionSubmit = setupRegion.find('button[type="submit"]');
+
+    regionFlags.on('click', event => {
+        const target = $(event.currentTarget);
+        regionFlags.removeClass('selected');
+        target.addClass('selected');
+    });
+
+    setupRegion.on('submit', event => {
+        event.preventDefault();
+        const selectedRegion = setupRegion.find('.selected').data('country');
+        if (!selectedRegion) {
+            regionSubmit.prop('disabled', true).addClass('red').text('Please select a region');
+            setTimeout(() => regionSubmit.prop('disabled', false).removeClass('red').text('Continue'), 2500);
+            return;
+        }
+
+        Settings.Region = selectedRegion;
+
+        setupRegion.addClass('hidden');
+        setupLogin.removeClass('hidden');
+    });
+
+    // SETUP - LOGIN
+    const usernameInput = setupLogin.find('[data-inputType="username"]');
+    const passwordInput = setupLogin.find('[data-inputType="password"]');
+    const loginSubmit = setupLogin.find('button[type="submit"]');
+
+    setupLogin.on('submit', event => {
+        event.preventDefault();
+        Settings.Username = usernameInput.val();
+        Settings.Password = passwordInput.val();
+
+        API.O2TVLogin(Settings, (Error, Data) => {
+            if(Error){
+                loginSubmit.prop('disabled', true).addClass('red').text(Error.message);
+                setTimeout(() => loginSubmit.prop('disabled', false).removeClass('red').text('Login'), 2500);
+                return;
+            }
+
+            window.location.href = '/';
+        })
+    });
+</script>
