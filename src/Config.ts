@@ -69,7 +69,7 @@ type ConfigData = {
             Username: string;
             Password: string;
             DeviceId?: string;
-            Services?: Record<string, O2TVServiceData>;
+            Service?: O2TVServiceData;
         };
         [key: string]: any;
     };

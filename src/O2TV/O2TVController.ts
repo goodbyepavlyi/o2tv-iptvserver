@@ -1,13 +1,15 @@
 import Config from '../Config';
 import Logger from '../Logger';
 import HTTP from '../Utils/HTTP';
+import O2TVCZSession from './Models/O2TVCZSession';
 import O2TVSession from './Models/O2TVSession';
+import O2TVSKSession from './Models/O2TVSKSession';
 import O2TVApi, { Channel } from './O2TVApi';
 
 export default class O2TVController{
     public static Instance: O2TVController;
 
-    public Session?: O2TVSession;
+    public Session?: O2TVCZSession|O2TVSKSession;
     public Channels?: Channel[];
 
     constructor(){
@@ -54,18 +56,17 @@ export default class O2TVController{
             const ChannelEPG = LiveEPG.find(x => x.id == ChannelId || x.id == MDId);
             if(!ChannelEPG || !ChannelEPG?.MDId) return Reject(`EPG not found for channel ${ChannelId}, MDId: ${MDId}`);
         }
-   
+
         try{
-            const StreamManifestUrl = MDId 
-                ? await O2TVApi.GetStreamDashUrl(this.Session.KS, ChannelId, MDId)
-                : await O2TVApi.GetStreamDashUrl(this.Session.KS, ChannelId);
+            const StreamManifestUrl = await O2TVApi.GetStreamDashUrl(this.Session.KS, ChannelId, MDId);
             if(!StreamManifestUrl) return Reject('Stream not found');
-            
-            const StreamDashUrl = await HTTP.GetRedirectedUrl(StreamManifestUrl.url);
+
+            const StreamDashUrl = await HTTP.GetAndReturnRedirect(StreamManifestUrl.url);
             const StreamXML = await HTTP.Get(StreamDashUrl) as string;
-    
-            return Resolve(StreamXML.replace(/<BaseURL>.*<\/BaseURL>/, `<BaseURL>${StreamDashUrl.split('/manifest.mpd')[0]}/</BaseURL>`));
+                
+            return Resolve(StreamXML.replace(/<BaseURL>.*<\/BaseURL>/, `<BaseURL>${StreamDashUrl.split('/manifest.mpd')[0]}</BaseURL>`));
         }catch(err: any){
+            Logger.Error(Logger.Type.O2TV, 'Failed to get stream:', err);
             return Reject(err);
         }
     });

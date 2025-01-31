@@ -1,15 +1,18 @@
+import crypto from 'node:crypto';
 import { AxiosError } from 'axios';
+
 import HTTP from '../Utils/HTTP';
 import Config from '../Config';
+import Logger from '../Logger';
 
 export enum O2TVRegion {
     CZ = 'CZ',
+    SK = 'SK'
 }
 
 export default class O2TVApi{
-    // public static APIRegion: O2TVRegion;
     public static get APIRegion(){
-        return Config.O2TVSettings()?.Region;
+        return Config.O2TVSettings()?.Region || O2TVRegion.CZ;
     }
 
     public static Settings = {
@@ -17,6 +20,12 @@ export default class O2TVApi{
             ClientTag: '1.22.0-PC',
             ApiVersion: '5.4.0',
             PartnerId: 3201
+        },
+        [O2TVRegion.SK]: {
+            ClientId: 'LdGXxfxItAAttubmGsfG1X9Z3s8a',
+            ClientTag: '9.57.0-PC',
+            ApiVersion: '5.4.0',
+            PartnerId: 3206
         }
     }
 
@@ -29,6 +38,20 @@ export default class O2TVApi{
             AccountServices: `https://${this.Settings[O2TVRegion.CZ].PartnerId}.frp1.ott.kaltura.com/api/p/${this.Settings[O2TVRegion.CZ].PartnerId}/service/CZ/action/Invoke`,
             List: `https://${this.Settings[O2TVRegion.CZ].PartnerId}.frp1.ott.kaltura.com/api_v3/service/asset/action/list?format=1&clientTag=${this.Settings[O2TVRegion.CZ].ClientTag}`,
             Multirequest: `https://${this.Settings[O2TVRegion.CZ].PartnerId}.frp1.ott.kaltura.com/api_v3/service/multirequest`
+        },
+        [O2TVRegion.SK]: {
+            AnonymousLogin: `https://${this.Settings[O2TVRegion.SK].PartnerId}.frp1.ott.kaltura.com/api_v3/service/ottuser/action/anonymousLogin?format=1&clientTag=${this.Settings[O2TVRegion.SK].ClientTag}`,
+            KalturaLogin: `https://${this.Settings[O2TVRegion.SK].PartnerId}.frp1.ott.kaltura.com/api_v3/service/ottuser/action/login?format=1&clientTag=${this.Settings[O2TVRegion.SK].ClientTag}`,
+
+            SessionDataKey: (Code: string) => `https://api.o2.sk/oauth2/authorize?response_type=code&client_id=${this.Settings[O2TVRegion.SK].ClientId}&redirect_uri=https://www.o2tv.sk/auth/&code_challenge=${Code}&code_challenge_method=S256&scope=tv_info`,
+            CommonAuth: 'https://api.o2.sk/commonauth',
+            OAuthToken: 'https://api.o2.sk/oauth2/token',
+
+            HouseholdGetDevice: `https://${this.Settings[O2TVRegion.SK].PartnerId}.frp1.ott.kaltura.com/api_v3/service/householddevice/action/get?format=1&clientTag=${this.Settings[O2TVRegion.SK].ClientTag}`,
+            HouseholdAddDevice: `https://${this.Settings[O2TVRegion.SK].PartnerId}.frp1.ott.kaltura.com/api_v3/service/householddevice/action/add?format=1&clientTag=${this.Settings[O2TVRegion.SK].ClientTag}`,
+
+            List: `https://${this.Settings[O2TVRegion.SK].PartnerId}.frp1.ott.kaltura.com/api_v3/service/asset/action/list?format=1&clientTag=${this.Settings[O2TVRegion.SK].ClientTag}`,
+            Multirequest: `https://${this.Settings[O2TVRegion.SK].PartnerId}.frp1.ott.kaltura.com/api_v3/service/multirequest`
         }
     };
 
@@ -45,6 +68,17 @@ export default class O2TVApi{
             apiVersion: this.Settings[O2TVApi.APIRegion]?.ApiVersion,
             partnerId: this.Settings[O2TVApi.APIRegion]?.PartnerId
         };
+    }   
+
+    private static PKCEChallengeFromVerifier(CodeVerifier: string){
+        const Hash = crypto.createHash('sha256').update(CodeVerifier).digest('base64');
+        return Hash.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+
+    private static GenerateChallengeCode(){
+        const Verifier = Array.from(crypto.getRandomValues(new Uint8Array(28)), byte => byte.toString(16).padStart(2, '0')).join('');
+        const Challenge = this.PKCEChallengeFromVerifier(Verifier);
+        return { Verifier, Challenge };
     }
 
     // API Callers
@@ -89,7 +123,7 @@ export default class O2TVApi{
         return Result;
     }
 
-    // API Authentification
+    // API Authentication
     public static AnonymousLogin = () => this.KalturaPost(this.Routes[O2TVApi.APIRegion].AnonymousLogin, {
         language: '*'
     }).then((x: any) => ({
@@ -98,15 +132,54 @@ export default class O2TVApi{
         refreshToken: x.refreshToken
     }));
 
-    public static Login = (Username: string, Password: string, DeviceId: string) => this.Post(this.Routes[O2TVApi.APIRegion].Login, {
-        service: 'https://www.new-o2tv.cz/',
-        username: Username,
-        password: Password,
-        udid: DeviceId
-    }).then((x: any) => ({
-        jwt: x.jwt,
-        refresh_token: x.refresh_token
-    }));
+    public static Login = (Username: string, Password: string, DeviceId: string) => {
+        if(O2TVApi.APIRegion == O2TVRegion.CZ){
+            return this.Post(this.Routes[O2TVApi.APIRegion].Login, {
+                service: 'https://www.new-o2tv.cz/',
+                username: Username,
+                password: Password,
+                udid: DeviceId
+            }).then((x: any) => x.jwt);
+        }
+        
+        // SK
+        return new Promise(async (Resolve, Reject) => {
+            const { Verifier, Challenge } = O2TVApi.GenerateChallengeCode();
+            Logger.Trace(Logger.Type.O2TV, 'PKCE Verifier:', Verifier);
+            Logger.Trace(Logger.Type.O2TV, 'PKCE Challenge:', Challenge);
+
+            const SessionDataKey = await HTTP.GetAndReturnRedirect(this.Routes[O2TVRegion.SK].SessionDataKey(Challenge))
+                .then(x => x.match(/sessionDataKey=([a-z0-9-]+)/i)?.[1] ?? null)
+                .catch(Reject);
+            Logger.Trace(Logger.Type.O2TV, 'SessionDataKey:', SessionDataKey);
+            if(!SessionDataKey) return Reject('Failed to get session data key, no key found');
+
+            const OAuthCode = await HTTP.PostAndReturnRedirect(this.Routes[O2TVRegion.SK].CommonAuth, {
+                handler: 'UIDAuthenticationHandler',
+                sessionDataKey: SessionDataKey,
+                username: Username,
+                password: Password
+            }, {'content-type': 'application/x-www-form-urlencoded'})
+                .then(x => x.match(/code=([a-z0-9-]+)/i)?.[1] ?? null)
+                .catch(Reject);
+            Logger.Trace(Logger.Type.O2TV, 'OAuthCode:', OAuthCode);
+            if(!OAuthCode) return Reject('Failed to get OAuth code, no code found');
+            
+            const AccessToken = await HTTP.Post(this.Routes[O2TVRegion.SK].OAuthToken, {
+                grant_type: 'authorization_code',
+                client_id: this.Settings[O2TVRegion.SK].ClientId,
+                code: OAuthCode,
+                redirect_uri: 'https://www.o2tv.sk/auth/',
+                code_verifier: Verifier
+            }, {'content-type': 'application/x-www-form-urlencoded'})
+                .then((x: any) => x.access_token)
+                .catch(Reject);
+            Logger.Trace(Logger.Type.O2TV, 'AccessToken:', AccessToken);
+            if(!AccessToken) return Reject('Failed to get access token, no token found');
+
+            return Resolve(AccessToken);
+        });
+    }
 
     public static GetAccountServices = (JWTToken: string, KS: string): Promise<Record<string, string>[]> => this.KalturaPost(this.Routes[O2TVApi.APIRegion].AccountServices, {
         ks: KS,
@@ -118,54 +191,97 @@ export default class O2TVApi{
         ],
     }).then((x: any) => JSON.parse(x.adapterData.service_list.value).ServicesList);
 
-    public static KalturaLogin = (KS: string, JWTToken: string, DeviceId: string, ServiceId: string) => this.KalturaPost(this.Routes[O2TVApi.APIRegion].KalturaLogin, {
-        language: 'ces',
-        username: 'NONE',
-        password: 'NONE',
-        ks: KS,
-        udid: DeviceId,
-        extraParams: {
-            token: { objectType: 'KalturaStringValue', value: JWTToken },
-            loginType: { objectType: 'KalturaStringValue', value: 'accessToken' },
-            brandId: { objectType: 'KalturaStringValue', value: '22' },
-            externalId: { objectType: 'KalturaStringValue', value: ServiceId }
+    public static KalturaLogin = (KS: string, JWTToken: string, DeviceId: string, ServiceId?: string) => {
+        if(this.APIRegion == O2TVRegion.CZ){
+            return this.KalturaPost(this.Routes[O2TVRegion.CZ].KalturaLogin, {
+                language: 'ces',
+                username: 'NONE',
+                password: 'NONE',
+                ks: KS,
+                udid: DeviceId,
+                extraParams: {
+                    token: { objectType: 'KalturaStringValue', value: JWTToken },
+                    loginType: { objectType: 'KalturaStringValue', value: 'accessToken' },
+                    brandId: { objectType: 'KalturaStringValue', value: '22' },
+                    externalId: { objectType: 'KalturaStringValue', value: ServiceId }
+                }
+            }).then((x: any) => ({
+                expiry: x.loginSession.expiry,
+                refreshToken: x.loginSession.refreshToken,
+                ks: x.loginSession.ks
+            }));
         }
-    }).then((x: any) => ({
-        expiry: x.loginSession.expiry,
-        refreshToken: x.loginSession.refreshToken,
-        ks: x.loginSession.ks
-    }));
+
+        return this.KalturaPost(this.Routes[O2TVRegion.SK].KalturaLogin, {
+            language: 'slk',
+            username: '11111',
+            password: '11111',
+            ks: KS,
+            udid: DeviceId,
+            extraParams: {
+                loginType: { objectType: 'KalturaStringValue', value: 'accessToken' },
+                accessToken: { objectType: 'KalturaStringValue', value: JWTToken }
+            }
+        }).then((x: any) => ({
+            expiry: x.loginSession.expiry,
+            refreshToken: x.loginSession.refreshToken,
+            ks: x.loginSession.ks
+        }));
+    }
     
     // Channel APIs
-    public static GetChannels = (KS: string) => this.PostList({
-        ks: KS,
-        language: 'ces',
-        filter: {
-            objectType: 'KalturaChannelFilter',
-            kSql: "(and asset_type='607')",
-            idEqual: 355960
-        },
-        pager: {
-            objectType: 'KalturaFilterPager',
-            pageSize: 300,
-            pageIndex: 1
+    public static async GetChannels(KS: string){
+        let Data: KalturaChannel[] = [];
+        if(O2TVApi.APIRegion == O2TVRegion.CZ){
+            await this.PostList({
+                ks: KS,
+                language: 'ces',
+                filter: {
+                    objectType: 'KalturaChannelFilter',
+                    kSql: "(and asset_type='607')",
+                    idEqual: 355960
+                },
+                pager: {
+                    objectType: 'KalturaFilterPager',
+                    pageSize: 300,
+                    pageIndex: 1
+                }
+            }).then(x => Data = x);
         }
-    }).then(data => data.map((x: KalturaChannel) => ({
-        id: x.id,
-        externalId: x.externalId,
-        
-        name: x.name,
-        description: x.description,
-        number: x.metas?.ChannelNumber?.value,
 
-        logo: x.images.find((x: any) => x.imageTypeId == 18)?.url || `${x.images[0].url}/height/320/width/480`,
-        images: x.images,
-        mediaFiles: x.mediaFiles,
+        if(O2TVApi.APIRegion == O2TVRegion.SK){
+            await this.PostList({
+                ks: KS,
+                language: '',
+                filter: {
+                    objectType: 'KalturaSearchAssetFilter',
+                    kSql: "(and asset_type='714')"
+                },
+                pager: {
+                    objectType: 'KalturaFilterPager',
+                    pageIndex: 1,
+                    pageSize: 500
+                }
+            }).then(x => Data = x);
+        }
 
-        startDate: x.startDate,
-        createDate: x.createDate,
-        endDate: x.endDate
-    })) as Channel[]);
+        return Data.map((x: KalturaChannel) => ({
+            id: x.id,
+            externalId: x.externalId,
+            
+            name: x.name,
+            description: x.description,
+            number: x.metas?.ChannelNumber?.value,
+    
+            logo: x.images?.find((x: any) => x.imageTypeId == 18)?.url || x.images[0]?.url ? `${x.images[0].url}/height/320/width/480` : null,
+            images: x.images,
+            mediaFiles: x.mediaFiles,
+    
+            startDate: x.startDate,
+            createDate: x.createDate,
+            endDate: x.endDate
+        })) as Channel[];
+    }
 
     // EPG APIs
     public static GetEPG = (Data: KalturaListBody) => new Promise<ChannelEPG[]>(async (Resolve, Reject) => {
@@ -258,8 +374,7 @@ export default class O2TVApi{
     // Stream APIs
     public static GetStreamDashUrl = (KS: string, ChannelId: string|number, MDId?: string|number) => new Promise<{ url: string; license: string; }>(async (Resolve, Reject) => {
         const StreamRequestData = {
-            apiVersion: '7.8.1',
-
+            ks: KS,
             '1': {
                 service: 'asset',
                 action: 'get',
@@ -279,8 +394,9 @@ export default class O2TVApi{
                     urlType: 'DIRECT',
                     adapterData: {
                         codec: { value: 'AVC' },
-                        quality: { value: 'UHD' }
-                    }
+                        quality: { value: 'UHD' },
+                        // DRM: { value: "true" }
+                    }   
                 },
                 ks: KS
             }
@@ -304,8 +420,11 @@ export default class O2TVApi{
                 };
             }
 
-            if(!URLs['DASH']) return Reject('No DASH stream found');
-            return Resolve(URLs['DASH']);
+            Logger.Trace(Logger.Type.O2TV, 'StreamURLs', URLs);
+            // TODO: make DASH_WV work
+            const Stream = URLs['DASH'] || URLs['HLS'] || URLs['DASH_WV'];
+            if(!Stream) return Reject('No DASH stream found');
+            return Resolve(Stream);
         }).catch(Reject);
     });
 
@@ -336,6 +455,23 @@ export default class O2TVApi{
         }
 
         Resolve(Streams);
+    });
+
+    // O2TV Session SK
+    public static GetHouseholdDevice = (KS: string) => this.KalturaPost(this.Routes[O2TVRegion.SK].HouseholdGetDevice, {
+        language: 'slk',
+        ks: KS
+    });
+
+    public static AddHouseholdDevice = (KS: string, DeviceId: string) => this.KalturaPost(this.Routes[O2TVRegion.SK].HouseholdAddDevice, {
+        language: 'slk',
+        ks: KS,
+        device: {
+            objectType: 'KalturaHouseholdDevice',
+            udid: DeviceId,
+            name: '',
+            brandId: 22
+        }
     });
 }
 

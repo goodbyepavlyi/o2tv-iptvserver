@@ -17,6 +17,10 @@ export default class extends ExpressRoute {
 
     private GenerateM3UPlaylistEntry(Channel: Channel, ChannelEPG: ChannelEPG){
         const CreateEntry = (ChannelNumber: number, ChannelName: string, ChannelLogo: string, ChannelId: number, MDId?: string|number) => [
+            // Widewine test for o2tv.sk
+            // `#KODIPROP:inputstream=inputstream.adaptive`,
+            // `#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha`,
+            // `#KODIPROP:inputstream.adaptive.license_key=xxx`,
             `#EXTINF:-1 catchup="append" catchup-days="7" catchup-source="&catchup_start_ts={utc}&catchup_end_ts={utcend}" tvg-id="${ChannelNumber}" tvh-epg="0" tvg-logo="${ChannelLogo}",${ChannelName}`,
             `${process.env.EXPRESS_URL}/Api/O2TV/Stream/${ChannelId}${MDId ? `/${MDId}` : ''}`
         ].join('\n');
