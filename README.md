@@ -2,8 +2,6 @@
 ⚠ This project is not affiliated with O2 TV. It is an unofficial project that is developed and maintained by the community.
 
 [![Build & Publish Docker Image to Docker Hub](https://github.com/goodbyepavlyi/o2tv-iptvserver/actions/workflows/docker-image.yml/badge.svg)](https://github.com/goodbyepavlyi/o2tv-iptvserver/actions/workflows/docker-image.yml)
-[![Docker](https://img.shields.io/docker/v/goodbyepavlyi/o2tv-iptvserver/latest)](https://hub.docker.com/r/goodbyepavlyi/o2tv-iptvserver)
-[![Docker](https://img.shields.io/docker/pulls/goodbyepavlyi/o2tv-iptvserver.svg)](https://hub.docker.com/r/goodbyepavlyi/o2tv-iptvserver)
 ![GitHub Stars](https://img.shields.io/github/stars/goodbyepavlyi/o2tv-iptvserver)
 
 <p align="center">
@@ -16,12 +14,24 @@ Simple and lightweight IPTV server that allows you to watch live TV channels fro
 
 **Note**: Before proceeding, ensure that Docker is installed on your system.
 
-#### 1. Clone the GitHub repository:
+#### 1. Download `docker-compose.yml` and `.env.example`:
+
 ```bash
-git clone https://github.com/goodbyepavlyi/o2tv-iptvserver
+curl -O https://raw.githubusercontent.com/goodbyepavlyi/o2tv-iptvserver/master/docker-compose.yml
+curl -O https://raw.githubusercontent.com/goodbyepavlyi/o2tv-iptvserver/master/.env.example
 ```
 
-#### 2. Run the container:
+#### 2. Configure the `.env` file:
+
+Rename `.env.example` to `.env` and edit it with your credentials:
+
+```bash
+mv .env.example .env
+nano .env  # Or use your preferred text editor
+```
+
+#### 3. Start the container:
+
 ```bash
 docker compose up -d
 ```
