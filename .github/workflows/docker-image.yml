@@ -28,7 +28,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - run: echo RELEASE=$(cat ./src/package.json | jq -r .version) >> $GITHUB_ENV
+      - run: echo RELEASE=$(cat ./package.json | jq -r .version) >> $GITHUB_ENV
 
       - name: Build & Publish Docker Image
         uses: docker/build-push-action@v3
