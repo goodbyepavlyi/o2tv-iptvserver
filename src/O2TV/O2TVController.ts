@@ -4,7 +4,7 @@ import HTTP from '../Utils/HTTP';
 import O2TVCZSession from './Models/O2TVCZSession';
 import O2TVSession from './Models/O2TVSession';
 import O2TVSKSession from './Models/O2TVSKSession';
-import O2TVApi, { Channel } from './O2TVApi';
+import O2TVApi, { Channel, O2TVRegion } from './O2TVApi';
 
 export default class O2TVController{
     public static Instance: O2TVController;
@@ -61,10 +61,13 @@ export default class O2TVController{
             const StreamManifestUrl = await O2TVApi.GetStreamDashUrl(this.Session.KS, ChannelId, MDId);
             if(!StreamManifestUrl) return Reject('Stream not found');
 
-            const StreamDashUrl = await HTTP.GetAndReturnRedirect(StreamManifestUrl.url);
+            let StreamDashUrl = await HTTP.GetAndReturnRedirect(StreamManifestUrl.url);
+            if(O2TVApi.APIRegion == O2TVRegion.SK){
+                StreamDashUrl = StreamDashUrl.replace(/output[0-9]+\//, 'output0/');
+            }
+
             const StreamXML = await HTTP.Get(StreamDashUrl) as string;
-                
-            return Resolve(StreamXML.replace(/<BaseURL>.*<\/BaseURL>/, `<BaseURL>${StreamDashUrl.split('/manifest.mpd')[0]}</BaseURL>`));
+            return Resolve(StreamXML.replace(/<BaseURL>.*<\/BaseURL>/, `<BaseURL>${StreamDashUrl.split('/manifest.mpd')[0]}/</BaseURL>`));
         }catch(err: any){
             Logger.Error(Logger.Type.O2TV, 'Failed to get stream:', err);
             return Reject(err);

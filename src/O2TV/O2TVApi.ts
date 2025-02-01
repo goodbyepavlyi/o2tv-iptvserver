@@ -83,6 +83,11 @@ export default class O2TVApi{
 
     // API Callers
     public static Post = (Route: string, Body: any) => HTTP.Post(Route, Body, this.Headers)
+        .then(x => {
+            Logger.Trace(Logger.Type.O2TV, `'O2TVApi#Post: => ${Route}`, Body);
+            Logger.Trace(Logger.Type.O2TV, `'O2TVApi#Post: <= ${Route}`, x);
+            return x;
+        })
         .catch(x => {
             if(!(x instanceof AxiosError)) throw x;
 
@@ -372,7 +377,7 @@ export default class O2TVApi{
     }).then((x: any) => x.objects);
 
     // Stream APIs
-    public static GetStreamDashUrl = (KS: string, ChannelId: string|number, MDId?: string|number) => new Promise<{ url: string; license: string; }>(async (Resolve, Reject) => {
+    public static GetStreamDashUrl = (KS: string, ChannelId: string|number, MDId?: string|number) => new Promise<{ url: string; license: string; }>((Resolve, Reject) => {
         const StreamRequestData = {
             ks: KS,
             '1': {
@@ -394,8 +399,7 @@ export default class O2TVApi{
                     urlType: 'DIRECT',
                     adapterData: {
                         codec: { value: 'AVC' },
-                        quality: { value: 'UHD' },
-                        // DRM: { value: "true" }
+                        quality: { value: 'UHD' }
                     }   
                 },
                 ks: KS
@@ -404,9 +408,9 @@ export default class O2TVApi{
 
         if(MDId){
             StreamRequestData['1'].assetReferenceType = 'epg_internal';
-            StreamRequestData['1'].id = Number(MDId);
+            StreamRequestData['1'].id = MDId;
 
-            StreamRequestData['2'].assetId = Number(MDId);
+            StreamRequestData['2'].assetId = MDId;
             StreamRequestData['2'].assetType = 'epg';
             StreamRequestData['2'].contextDataParams['context'] = 'START_OVER';
         }
@@ -421,8 +425,7 @@ export default class O2TVApi{
             }
 
             Logger.Trace(Logger.Type.O2TV, 'StreamURLs', URLs);
-            // TODO: make DASH_WV work
-            const Stream = URLs['DASH'] || URLs['HLS'] || URLs['DASH_WV'];
+            const Stream = URLs['DASH'] || URLs['DASH_WV'];
             if(!Stream) return Reject('No DASH stream found');
             return Resolve(Stream);
         }).catch(Reject);
