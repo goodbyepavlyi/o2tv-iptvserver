@@ -1,9 +1,7 @@
 services:
   o2tv-iptvserver:
     container_name: "o2tv-iptvserver"
-    image: "goodbyepavlyi/o2tv-iptvserver:latest"
-    build:
-      context: .
+    image: "ghcr.io/goodbyepavlyi/o2tv-iptvserver:latest"
     ports:
       - "3000:3000"
     volumes:
