@@ -48,13 +48,12 @@ export default class Express {
                 if (res.headersSent) return;
                 res.status(Code).json({
                     Status: Json.Status ?? 'OK',
-                    Passed: Json.Passed ?? true,
                     Message: Json.Message ?? 'OK',
                     Data: Json.Data ?? null
                 });
             }
 
-            res.SendError = (Code, Error, Data = null) => res.status(Code).json({ Status: 'FAIL', Passed: false, Message: Error, Data });
+            res.SendError = (Code, Error, Data = null) => res.status(Code).json({ Status: 'FAIL', Message: Error, Data });
 
             // 5xx
             res.InternalError = (Error = null) => res.SendError(500, Error ?? 'Internal Server Error');
@@ -83,12 +82,12 @@ export default class Express {
         this.App.use((Error: any, req: express.Request, _res: express.Response, next: express.NextFunction) => {
             const res = _res as RouteResponse;
             if (Error instanceof SyntaxError && (Error as any)?.status == 400 && 'body' in Error) {
-                res.status(400).json({ Status: 'FAIL', Passed: false, Message: '400 Bad Request', Data: null });
+                res.status(400).json({ Status: 'FAIL', Message: '400 Bad Request', Data: null });
                 return;
             }
 
             Logger.Error(Logger.Type.Express, 'An error occurred while handling the request:', Error);
-            res.status(500).json({ Status: 'FAIL', Passed: false, Message: '500 Internal Server Error', Data: { Error } });
+            res.status(500).json({ Status: 'FAIL', Message: '500 Internal Server Error', Data: { Error } });
         });
         
     }

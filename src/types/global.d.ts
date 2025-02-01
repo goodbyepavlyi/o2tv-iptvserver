@@ -41,8 +41,7 @@ declare global {
     }
 
     type ExpressAPIResponse = {
-        Passed: boolean;
-        Status: string;
+        Status: 'OK'|'FAIL';
         Message: string;
         Data?: any;
     };

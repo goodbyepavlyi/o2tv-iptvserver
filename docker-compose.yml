@@ -1,7 +1,7 @@
 services:
   o2tv-iptvserver:
     container_name: "o2tv-iptvserver"
-    # image: "goodbyepavlyi/o2tv-iptvserver:latest"
+    image: "goodbyepavlyi/o2tv-iptvserver:latest"
     build:
       context: .
     ports:
