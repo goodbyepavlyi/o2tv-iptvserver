@@ -15,7 +15,7 @@ if (process.DevMode) {
 
     Object.keys(process.env).forEach(Key => {
         const DevKey = `${Key}_DEV`;
-        if (!process.env[DevKey]) return;
+        if(!process.env[DevKey]) return;
 
         process.env[Key] = process.env[DevKey];
         delete process.env[DevKey];
@@ -32,11 +32,10 @@ Logger.Init({
 
 let Exiting = false;
 const Shutdown = async (Code: number) => {
-    if (Exiting) return;
+    if(Exiting) return;
     Exiting = true;
 
     await Bootstrapper.Stop();
-
     Logger.Info(Logger.Type.Application, `Exiting with code &c${Code}&r...`);
     process.exit(Code);
 };

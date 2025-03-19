@@ -1,11 +1,11 @@
 services:
   o2tv-iptvserver:
-    container_name: "o2tv-iptvserver"
-    image: "ghcr.io/goodbyepavlyi/o2tv-iptvserver:latest"
+    container_name: o2tv-iptvserver
+    image: ghcr.io/goodbyepavlyi/o2tv-iptvserver:latest
     ports:
-      - "3000:3000"
+      - 3000:3000
     volumes:
-      - "./Data:/App/Data"
+      - ./Data:/App/Data
     env_file:
-      - ".env"
+      - .env
     restart: "unless-stopped"

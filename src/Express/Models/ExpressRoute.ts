@@ -2,24 +2,18 @@ import express from 'express';
 import Express from '../Express';
 import Logger from '../../Logger';
 
-export default class ExpressRoute {
+export default class ExpressRoute{
     private Express: Express;
 
     public Path: string;
     public Routes: RouteHandler[]|undefined;
 
-    constructor(Express: Express, Options: ExpressRouteOptions) {
+    constructor(Express: Express, Options: ExpressRouteOptions){
         this.Express = Express;
         this.Path = Options.Path;
-
-        this?.Init?.();
     }
 
-    public Init(): void{
-        return;
-    }
-
-    async run(req: express.Request, res: RouteResponse, next: express.NextFunction): Promise<void> {
+    public async run(req: RouteRequest, res: RouteResponse, next: express.NextFunction){
         const OriginalUrl = req.originalUrl.split('?')[0] || '/';
         Logger.Debug(Logger.Type.Express, `Processing request: &c${req.method} ${OriginalUrl}&r`);
 

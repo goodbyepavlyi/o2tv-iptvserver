@@ -8,7 +8,7 @@ import Utils from '../Utils';
 import ExpressMiddleware from './Models/ExpressMiddleware';
 import ExpressRoute from './Models/ExpressRoute';
 
-export default class Express {
+export default class Express{
     public static Instance: Express;
 
     public App: express.Express;
@@ -17,11 +17,13 @@ export default class Express {
     private Middlewares: Record<string, ExpressMiddleware> = {};
     private Routes: Record<string, ExpressRoute> = {};
 
-    constructor() {
+    constructor(){
         Express.Instance = this;
 
-        if (!process.env.EXPRESS_URL?.match(/^(http|https):\/\//)) 
+        if (!process.env.EXPRESS_URL?.match(/^(http|https):\/\//)){
             throw new Error('Environment EXPRESS_URL must be a valid URL');
+        }
+
         process.env.EXPRESS_PORT = process.env.EXPRESS_PORT ?? 3000;
 
         this.App = express();
@@ -35,71 +37,87 @@ export default class Express {
         this.App.set('views', path.join(__dirname, 'Views'));
     }
 
-    private RegisterRoute(RouteName: string) {
-        const Route = this.Routes[RouteName];
-        this.App.use('/*', (req, res, next) => Route.run(req, res as RouteResponse, next));
+    private RegisterRoute(RouteName: string){
+        this.App.use('/*', (req, res, next) => this.Routes[RouteName].run(req as RouteRequest, res as RouteResponse, next));
     }
 
-    private Init() {
-        this.App.use((req, _res, next) => {
-            const res = _res as RouteResponse;
+    private InitExpressRoute(_req: express.Request, _res: express.Response, next: express.NextFunction, err: any){
+        const req = _req as RouteRequest;
+        const res = _res as RouteResponse;
 
-            res.SendJson = (Json: ExpressAPIResponse, Code: number = 200) => {
-                if (res.headersSent) return;
-                res.status(Code).json({
-                    Status: Json.Status ?? 'OK',
-                    Message: Json.Message ?? 'OK',
-                    Data: Json.Data ?? null
-                });
-            }
+        const SourceIP = req.headers['x-forwarded-for'] ?? req.socket.remoteAddress;
+        const HeaderIP = req.headers['x-real-ip'];
 
-            res.SendError = (Code, Error, Data = null) => res.status(Code).json({ Status: 'FAIL', Message: Error, Data });
+        req.IP = SourceIP as string;
+        if(HeaderIP && SourceIP == '::ffff:127.0.0.1'){
+            req.IP = HeaderIP as string;
+        }
 
-            // 5xx
-            res.InternalError = (Error = null) => res.SendError(500, Error ?? 'Internal Server Error');
+        res.SendJson = (Json: ExpressAPIResponse, Code: number = 200) => {
+            if(res.headersSent) return;
+            res.status(Code).json({
+                Status: Json.Status ?? 'OK',
+                Message: Json.Message ?? 'OK',
+                Data: Json.Data ?? null
+            });
+        }
 
-            // 4xx
-            res.Unauthorized = (error = null) => res.SendError(401, (error ?? '401 Unauthorized'));
-            res.BadRequest = (error = null) => res.SendError(400, (error ?? '400 Bad Request'));
-            res.NotFound = (error = null) => res.SendError(404, (error ?? '404 Not Found'));
+        res.SendError = (Code, err, Data = null) => res.status(Code).json({ Status: 'FAIL', Message: err, Data });
 
-            // 2xx
-            res.OK = (Message = 'OK', Data = null) => res.SendJson({ Status: 'OK', Message, Data });
-            res.FAIL = (Message = 'FAIL', Data = null) => res.SendJson({ Status: 'FAIL', Message, Data });
-            res.DATA = (Data) => res.SendJson({ Status: 'OK', Message: 'OK', Data });
+        // 5xx
+        res.InternalError = (err = null) => res.SendError(500, err ?? 'Internal Server Error');
 
-            if(!process.DevMode) Logger.Info(Logger.Type.Express, `&c${req.headers['x-forwarded-for'] || req.ip}&r - "${req.method} ${req.url}" ${req.headers['user-agent']}`);
+        // 4xx
+        res.Unauthorized = (err = null) => res.SendError(401, (err ?? '401 Unauthorized'));
+        res.BadRequest = (err = null) => res.SendError(400, (err ?? '400 Bad Request'));
+        res.NotFound = (err = null) => res.SendError(404, (err ?? '404 Not Found'));
 
-            next();
-        });
+        // 2xx
+        res.OK = (Message = 'OK', Data = null) => res.SendJson({ Status: 'OK', Message, Data });
+        res.FAIL = (Message = 'FAIL', Data = null) => res.SendJson({ Status: 'FAIL', Message, Data });
+        res.DATA = (Data) => res.SendJson({ Status: 'OK', Message: 'OK', Data });
+
+        if(!process.DevMode){
+            Logger.Info(Logger.Type.Express, `&c${req.headers['x-forwarded-for'] || req.IP}&r - "${req.method} ${req.url}" ${req.headers['user-agent']}`);
+        }
+        
+        next();
+    }
+
+    private Init(){
+        this.App.use((_req, _res, next) => this.InitExpressRoute(_req, _res, next, null));
+        this.App.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => this.InitExpressRoute(req, res, next, err));
 
         this.App.use('/', express.static(path.join(__dirname, 'Public')));
 
         this.RegisterRoute('RootRoute');
         this.RegisterRoute('O2TVRoute');
 
+        this.App.get('/', (_, res: any) => res.json({ Status: 'OK', Message: `${process.Description} ${process.Version}`, Data: null }));
+
         this.App.use((req, res, next) => (res as RouteResponse).NotFound());
-        this.App.use((Error: any, req: express.Request, _res: express.Response, next: express.NextFunction) => {
+        this.App.use((err: any, _req: express.Request, _res: express.Response, next: express.NextFunction) => {
+            const req = _req as RouteRequest;
             const res = _res as RouteResponse;
-            if (Error instanceof SyntaxError && (Error as any)?.status == 400 && 'body' in Error) {
-                res.status(400).json({ Status: 'FAIL', Message: '400 Bad Request', Data: null });
+            if(err instanceof SyntaxError || err?.status == 400 && 'body' in err){
+                res.FAIL('400 Bad Request');
                 return;
             }
 
             Logger.Error(Logger.Type.Express, 'An error occurred while handling the request:', Error);
-            res.status(500).json({ Status: 'FAIL', Message: '500 Internal Server Error', Data: { Error } });
+            res.InternalError('500 Internal Server Error', err);
         });
         
     }
 
-    private async InitRoutes() {
+    private async InitRoutes(){
         await this.LoadMiddlewares();
         await this.LoadRoutes();
 
         this.Init();
     }
 
-    public async Start(): Promise<void> {
+    public async Start(): Promise<void>{
         await this.InitRoutes();
         
         return new Promise((Resolve, Reject) => {
@@ -111,10 +129,10 @@ export default class Express {
         });
     }
 
-    private async LoadMiddlewares() {
+    private async LoadMiddlewares(){
         Logger.Debug(Logger.Type.Express, 'Loading middlewares...');
 
-        for (const FilePath of Utils.ReadDirRecursive(path.join(__dirname, 'Middlewares'))) {
+        for(const FilePath of Utils.ReadDirRecursive(path.join(__dirname, 'Middlewares'))){
             const Middleware: ExpressMiddleware = new (require(FilePath)).default(this);
             const FileName = path.parse(FilePath).name;
             this.Middlewares[FileName] = Middleware;

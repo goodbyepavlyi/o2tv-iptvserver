@@ -11,16 +11,16 @@ const DefaultConfig: ConfigData = {
     }
 };
 
-export default class Config {
+export default class Config{
     private static readonly ConfigPath: string = './Data/Config.json';
     private static _Config: ConfigData;
 
-    public static get Config(): ConfigData {
+    public static get Config(){
         return this._Config || this.LoadConfig();
     }
 
-    public static LoadConfig(): ConfigData {
-        if (!fs.existsSync(this.ConfigPath)) {
+    public static LoadConfig(){
+        if(!fs.existsSync(this.ConfigPath)){
             this._Config = DefaultConfig;
             this.SaveConfig();
             return this._Config;
@@ -30,30 +30,30 @@ export default class Config {
         return this._Config;
     }
 
-    public static SaveConfig() {
-        if (!this._Config) return;
+    public static SaveConfig(){
+        if(!this._Config) return;
         Logger.Debug(Logger.Type.Config, 'Saving config to disk');
         fs.writeFileSync(this.ConfigPath, JSON.stringify(this._Config, null, 4), 'utf8');
     }
 
-    public static get LogLevel() { return this.Config.Log.Level; }
-    public static get LogToFile() { return this.Config.Log.LogToFile; }
+    public static get LogLevel(){ return this.Config.Log.Level; }
+    public static get LogToFile(){ return this.Config.Log.LogToFile; }
 
-    public static get Settings() { return this.Config.Settings; }
-    public static SetSettings(Key: string, Settings: { [key: string]: any }) {
+    public static get Settings(){ return this.Config.Settings; }
+    public static SetSettings(Key: string, Settings: { [key: string]: any }){
         if(Key == 'O2TV'){
             if(!Settings.Region) throw new Error('No region provided');
             if(!Settings.Username) throw new Error('No username provided');
             if(!Settings.Password) throw new Error('No password provided');
         }
 
-        if (!this._Config.Settings) this._Config.Settings = {};
+        if(!this._Config.Settings) this._Config.Settings = {};
         this._Config.Settings[Key] = Settings;
         
         this.SaveConfig();
     }
 
-    public static O2TVSettings() {
+    public static O2TVSettings(){
         return this.Settings?.O2TV;
     }
 }

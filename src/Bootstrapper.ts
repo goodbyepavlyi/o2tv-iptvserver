@@ -4,16 +4,16 @@ import Express from './Express/Express';
 import Logger from './Logger';
 import Config from './Config';
 
-export default class Bootstrapper {
+export default class Bootstrapper{
     private static O2TVController: O2TVController;
     private static Express: Express;
 
-    public static Init() {
+    public static Init(){
         this.O2TVController = new O2TVController();
         this.Express = new Express();
     }
 
-    public static async Start() {
+    public static async Start(){
         let StartupTime = Date.now();
 
         try{
@@ -32,9 +32,8 @@ export default class Bootstrapper {
         Logger.Info(Logger.Type.Application, `Started &c${process.Description} v${process.Version}&r in &c${StartupTime}&rms!`);
     }
 
-    public static async Stop() {
+    public static async Stop(){
         await this.O2TVController.Stop();
-
         Config.SaveConfig();
     }
 }

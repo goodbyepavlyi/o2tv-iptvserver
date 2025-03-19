@@ -1,20 +1,24 @@
 import express from 'express';
 
-declare global {
-    namespace NodeJS {
-        interface Process {
+declare global{
+    namespace NodeJS{
+        interface Process{
             DevMode: boolean;
             Version: string;
             Description: string;
         }
 
-        interface ProcessEnv {
+        interface ProcessEnv{
             EXPRESS_PORT: string;
             EXPRESS_URL: string;
         }
     }
 
-    interface RouteResponse extends express.Response {
+    interface RouteRequest extends express.Request{
+        IP: string;
+    }
+    
+    interface RouteResponse extends express.Response{
         // Utils
         SendJson(Data: any, Code?: number): void;
         SendError(Code: number, Error: string, Data?: any): void;
@@ -32,7 +36,7 @@ declare global {
         DATA(Data: any): void;
     }
 
-    interface RouteHandler {
+    interface RouteHandler{
         name: string;
         method: string;
         required?: string[];
@@ -46,7 +50,6 @@ declare global {
         Data?: any;
     };
 
-    type RouteRequest = express.Request;
     type RouteCallback = (req: RouteRequest, res: RouteResponse, next: express.NextFunction) => void;
 
     type MiddlewareFunction = (req: RouteRequest, res: RouteResponse, route: RouteHandler) => MiddlewareResponse;

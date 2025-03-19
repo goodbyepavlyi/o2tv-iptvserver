@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import util from 'node:util';
 
-export type LogLevel = 'Debug'|'Info'|'Warn'|'Error'|'Trace';
+export type LogLevel = 'Trace'|'Debug'|'Info'|'Warn'|'Error';
 
-interface LoggerType {
+interface LoggerType{
     Color: string;
     Output: string;
 };
@@ -16,14 +16,14 @@ type LogLevelConfig = {
     Output: string;
 };
 
-export default class Logger {
-    static LogToFile: boolean;
-    static LogDirectory: string = './Data/Logs';
-    static LogFile: fs.WriteStream|null = null;
-    static LogLevel: LogLevelConfig|null = null;
+export default class Logger{
+    public static LogToFile: boolean;
+    public static LogDirectory: string = './Data/Logs';
+    public static LogFile: fs.WriteStream|null;
+    public static LogLevel: LogLevelConfig|null;
 
-    static readonly Colors = {
-        Uncolorize: (value: string): string => value.replace(/\x1B\[\d+m/gi, ''),
+    public static readonly Colors = {
+        Uncolorize: (x: string) => x.replace(/\x1B\[\d+m/gi, ''),
         Reset: '\x1b[0m',
         Bright: '\x1b[1m',
         Dim: '\x1b[2m',
@@ -56,13 +56,7 @@ export default class Logger {
         }
     };
 
-    static readonly Type: {
-        Logger: LoggerType;
-        Config: LoggerType;
-        Application: LoggerType;
-        Express: LoggerType;
-        O2TV: LoggerType;
-    } = {
+    public static readonly Type: Record<'Logger'|'Config'|'Application'|'Express'|'O2TV', LoggerType> = {
         Logger: {
             Color: `${Logger.Colors.Dim}${Logger.Colors.Fg.Blue}`,
             Output: 'LOGGER'
@@ -85,7 +79,7 @@ export default class Logger {
         }
     };
 
-    static readonly LogLevels: Record<'Trace'|'Debug'|'Info'|'Warn'|'Error', LogLevelConfig> = {
+    public static readonly LogLevels: Record<LogLevel, LogLevelConfig> = {
         Trace: {
             Level: -2,
             Callback: console.debug,
@@ -118,41 +112,40 @@ export default class Logger {
         }
     }
 
-    static Init(Options: { LogLevel: LogLevel; LogToFile: boolean }): void {
+    public static Init(Options: { LogLevel: LogLevel; LogToFile: boolean }){
         Logger.SetLogLevel(Options.LogLevel);
         Logger.SetLogToFile(Options.LogToFile);
     }
 
-    static SetLogLevel(Level: LogLevel): void {
+    public static SetLogLevel(Level: LogLevel){
         Logger.LogLevel = this.LogLevels[Level] || this.LogLevels.Info;
         this.Info(Logger.Type.Logger, `Log level set to &c${Level}&r`);
     }
 
-    static SetLogToFile(Value: boolean): void {
-        if (Logger.LogToFile == Value) return;
+    public static SetLogToFile(State: boolean){
+        if(Logger.LogToFile == State) return;
+        Logger.LogToFile = State;
 
-        Logger.LogToFile = Value;
-
-        if (Value) {
+        if(State){
             Logger.CreateLogFile();
-        } else {
-            Logger.LogFile?.end();
-            Logger.LogFile = null;
+            return;
         }
+
+        Logger.LogFile?.end();
+        Logger.LogFile = null;
     }
 
-    private static CreateLogFile(): void {
-        if (process.DevMode || !Logger.LogToFile) return;
-        if (!fs.existsSync(this.LogDirectory)) {
+    private static CreateLogFile(){
+        if(process.DevMode || !Logger.LogToFile) return;
+        if(!fs.existsSync(this.LogDirectory)){
             fs.mkdirSync(this.LogDirectory);
-            this.Info(Logger.Type.Logger, `Created log directory &c${this.LogDirectory}&r`);
         }
 
         const DatePrefix = Logger.BuildDatePrefix({ Prefix: { Date: '-' }, Year: true, Month: true, Day: true });
 
         let FileName = path.join(this.LogDirectory, `${DatePrefix}.log`);
         let FileId = 1;
-        while (fs.existsSync(FileName)) {
+        while(fs.existsSync(FileName)){
             FileName = path.join(this.LogDirectory, `${DatePrefix}-${FileId}.log`);
             FileId++;
         }
@@ -160,7 +153,7 @@ export default class Logger {
         Logger.LogFile = fs.createWriteStream(FileName, { flags: 'a' });
     }
 
-    private static BuildLogLinePrefix(Level: LogLevelConfig, Type: LoggerType): string {
+    private static BuildLogLinePrefix(Level: LogLevelConfig, Type: LoggerType){
         const DatePrefix = Logger.BuildDatePrefix({ Year: true, Month: true, Day: true, Hour: true, Minute: true, Second: true });
         return `[${DatePrefix}] [${Level.Color}${Level.Output}${Logger.Colors.Reset}] [${Type.Color}${Type.Output}${Logger.Colors.Reset}]`;
     }
@@ -176,7 +169,7 @@ export default class Logger {
             Date?: string;
             Time?: string;
         };
-    }): string {
+    }){
         const Prefix = {
             Date: Options.Prefix?.Date || '/',
             Time: Options.Prefix?.Time || ':',
@@ -192,30 +185,35 @@ export default class Logger {
         };
     
         let DateString = '';
-        if (Options.Year) DateString += `${DateOptions.Year}${Prefix.Date}`;
-        if (Options.Month) DateString += `${DateOptions.Month}${Prefix.Date}`;
-        if (Options.Day) DateString += `${DateOptions.Day}`;
-        if (Options.Hour) DateString += ` ${DateOptions.Hour}${Prefix.Time}`;
-        if (Options.Minute) DateString += `${DateOptions.Minute}${Prefix.Time}`;
-        if (Options.Second) DateString += `${DateOptions.Second}`;
+        if(Options.Year) DateString += `${DateOptions.Year}${Prefix.Date}`;
+        if(Options.Month) DateString += `${DateOptions.Month}${Prefix.Date}`;
+        if(Options.Day) DateString += `${DateOptions.Day}`;
+        if(Options.Hour) DateString += ` ${DateOptions.Hour}${Prefix.Time}`;
+        if(Options.Minute) DateString += `${DateOptions.Minute}${Prefix.Time}`;
+        if(Options.Second) DateString += `${DateOptions.Second}`;
     
         return DateString;
     }
 
-    private static Log(LogLevel: LogLevelConfig, LogType: LoggerType, ...Args: any[]): void {
-        if (Logger.LogLevel && Logger.LogLevel?.Level > LogLevel.Level) return;
+    private static Log(LogLevel: LogLevelConfig, LogType: LoggerType, ...Args: any[]){
+        if(Logger.LogLevel && Logger.LogLevel?.Level > LogLevel.Level){
+            return;
+        }
 
         const LogLinePrefix = Logger.BuildLogLinePrefix(LogLevel, LogType);
         const LogLine = [ LogLinePrefix, ...Args ].map(Arg => {
-            if (Arg == LogLinePrefix) return Arg;
+            if(Arg == LogLinePrefix) return Arg;
 
-            if (typeof Arg == 'string') {
+            if(typeof Arg == 'string') {
                 Arg = Arg.replaceAll('&r', Logger.Colors.Reset);
 
-                if (LogLevel.Level == Logger.LogLevels.Error.Level) 
+                if(LogLevel.Level == Logger.LogLevels.Error.Level){
                     return Arg.replaceAll('&c', Logger.Colors.Fg.Red);
-                if (LogLevel.Level == Logger.LogLevels.Warn.Level) 
+                }
+
+                if (LogLevel.Level == Logger.LogLevels.Warn.Level){
                     return Arg.replaceAll('&c', Logger.Colors.Fg.Yellow);
+                }
 
                 return Arg.replaceAll('&c', LogType.Color);
             }
@@ -224,14 +222,14 @@ export default class Logger {
         }).join(' ');
 
         LogLevel.Callback(LogLine);
-        if (Logger.LogFile instanceof fs.WriteStream) {
+        if(Logger.LogFile instanceof fs.WriteStream){
             Logger.LogFile.write(`${LogLine}\n`);
         }
     }
 
-    static Trace = (Type: LoggerType, ...Args: any[]) => Logger.Log(Logger.LogLevels.Trace, Type, ...Args);
-    static Debug = (Type: LoggerType, ...Args: any[]) => Logger.Log(Logger.LogLevels.Debug, Type, ...Args);
-    static Info = (Type: LoggerType, ...Args: any[]) => Logger.Log(Logger.LogLevels.Info, Type, ...Args);
-    static Warn = (Type: LoggerType, ...Args: any[]) => Logger.Log(Logger.LogLevels.Warn, Type, ...Args);
-    static Error = (Type: LoggerType, ...Args: any[]) => Logger.Log(Logger.LogLevels.Error, Type, ...Args);
+    public static Trace = (Type: LoggerType, ...Args: any[]) => Logger.Log(Logger.LogLevels.Trace, Type, ...Args);
+    public static Debug = (Type: LoggerType, ...Args: any[]) => Logger.Log(Logger.LogLevels.Debug, Type, ...Args);
+    public static Info = (Type: LoggerType, ...Args: any[]) => Logger.Log(Logger.LogLevels.Info, Type, ...Args);
+    public static Warn = (Type: LoggerType, ...Args: any[]) => Logger.Log(Logger.LogLevels.Warn, Type, ...Args);
+    public static Error = (Type: LoggerType, ...Args: any[]) => Logger.Log(Logger.LogLevels.Error, Type, ...Args);
 }
