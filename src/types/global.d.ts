@@ -1,4 +1,5 @@
 import express from 'express';
+import { IPTVProviderType } from '../IPTV/IPTVProviderType';
 
 declare global{
     namespace NodeJS{
@@ -11,6 +12,15 @@ declare global{
         interface ProcessEnv{
             EXPRESS_PORT: string;
             EXPRESS_URL: string;
+
+            PROVIDER_TYPE: IPTVProviderType;
+            PROVIDER_USERNAME: string;
+            PROVIDER_PASSWORD: string;
+
+            PROVIDER_ONEPLAY_DEVICE_NAME: string;
+
+            EPG_DAYS_BACK: string;
+            EPG_DAYS_FORWARD: string;
         }
     }
 

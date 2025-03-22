@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export default class Utils {
+export default class Utils{
     public static ReadDirRecursive(Directory: string): string[]{
         let Entries: string[] = [];
         for(const File of fs.readdirSync(Directory)){
@@ -25,5 +25,9 @@ export default class Utils {
         }
     
         return Result;
+    }
+
+    public static ReplaceHTMLChars(val: string){
+        return val.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&apos;').replace(/"/g, '&quot;');
     }
 }

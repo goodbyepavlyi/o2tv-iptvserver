@@ -5,7 +5,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./Data:/App/Data
+      - ./Data:/app/Data
     env_file:
       - .env
     restart: "unless-stopped"

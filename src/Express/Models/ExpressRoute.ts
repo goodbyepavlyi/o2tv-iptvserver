@@ -1,4 +1,5 @@
 import express from 'express';
+
 import Express from '../Express';
 import Logger from '../../Logger';
 
@@ -55,15 +56,15 @@ export default class ExpressRoute{
 
             req = result.req;
             res = result.res;
-        }) as any).then(() => {
+        }) as any).then(async () => {
             if(res.headersSent) return;
 
             try{
-                Route.run(req, res, next);
-            }catch(err){
-                return res.InternalError(`500 Internal Server Error`);
+                await Route.run(req, res, next);
+            }catch(err: any){
+                return next(err);
             }
-        }).catch(() => (null));
+        }).catch(() => null);
     }
 }
 

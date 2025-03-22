@@ -4,10 +4,6 @@
 [![Build & Publish Docker Image to Docker Hub](https://github.com/goodbyepavlyi/o2tv-iptvserver/actions/workflows/docker-image.yml/badge.svg)](https://github.com/goodbyepavlyi/o2tv-iptvserver/actions/workflows/docker-image.yml)
 ![GitHub Stars](https://img.shields.io/github/stars/goodbyepavlyi/o2tv-iptvserver)
 
-<p align="center">
-  <img src="./assets/ui.png" width="802" />
-</p>
-
 Simple and lightweight IPTV server that allows you to watch live TV channels from O2 TV on your device. It allows to play multiple channels at the same time and supports multiple clients even if you don't have the subscription for it.
 
 ## Installation
@@ -35,6 +31,8 @@ nano .env  # Or use your preferred text editor
 ```bash
 docker compose up -d
 ```
+
+That's it! Your O2 TV IPTV Server is now up and running. You can now access the server at `http://YOUR_IP:1337` (or any other port you've specified in the `.env` file).
 
 ## Update
 

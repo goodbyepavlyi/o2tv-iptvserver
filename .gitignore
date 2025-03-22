@@ -14,4 +14,4 @@ node_modules/
 .env
 
 Data/
-src/Express/Public/app.css
+dist/

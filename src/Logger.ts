@@ -56,7 +56,7 @@ export default class Logger{
         }
     };
 
-    public static readonly Type: Record<'Logger'|'Config'|'Application'|'Express'|'O2TV', LoggerType> = {
+    public static readonly Type: Record<'Logger'|'Config'|'Application'|'Express'|'IPTV', LoggerType> = {
         Logger: {
             Color: `${Logger.Colors.Dim}${Logger.Colors.Fg.Blue}`,
             Output: 'LOGGER'
@@ -73,9 +73,9 @@ export default class Logger{
             Color: Logger.Colors.Fg.Green,
             Output: 'EXPRESS'
         },
-        O2TV: {
+        IPTV: {
             Color: Logger.Colors.Fg.Blue,
-            Output: 'O2TV'
+            Output: 'IPTV'
         }
     };
 
@@ -204,7 +204,11 @@ export default class Logger{
         const LogLine = [ LogLinePrefix, ...Args ].map(Arg => {
             if(Arg == LogLinePrefix) return Arg;
 
-            if(typeof Arg == 'string') {
+            if(typeof Arg == 'string'){
+                if(LogLevel.Level == Logger.LogLevels.Trace.Level){
+                    return Arg;
+                }
+
                 Arg = Arg.replaceAll('&r', Logger.Colors.Reset);
 
                 if(LogLevel.Level == Logger.LogLevels.Error.Level){

@@ -1,20 +1,17 @@
 import path from 'node:path';
 import http from 'node:http';
 import express from 'express';
-import expressLayouts from 'express-ejs-layouts';
 
 import Logger from '../Logger';
 import Utils from '../Utils';
-import ExpressMiddleware from './Models/ExpressMiddleware';
 import ExpressRoute from './Models/ExpressRoute';
 
 export default class Express{
     public static Instance: Express;
 
     public App: express.Express;
-    public HttpServer: import('http').Server|null = null;
+    public HttpServer: http.Server|null = null;
 
-    private Middlewares: Record<string, ExpressMiddleware> = {};
     private Routes: Record<string, ExpressRoute> = {};
 
     constructor(){
@@ -28,13 +25,7 @@ export default class Express{
 
         this.App = express();
         this.App.disable('x-powered-by');
-
         this.App.use(express.json());
-        this.App.use(expressLayouts);
-
-        this.App.set('layout extractScripts', true);
-        this.App.set('view engine', 'ejs');
-        this.App.set('views', path.join(__dirname, 'Views'));
     }
 
     private RegisterRoute(RouteName: string){
@@ -90,8 +81,8 @@ export default class Express{
 
         this.App.use('/', express.static(path.join(__dirname, 'Public')));
 
-        this.RegisterRoute('RootRoute');
-        this.RegisterRoute('O2TVRoute');
+        this.RegisterRoute('ControlRoute');
+        this.RegisterRoute('IPTVRoute');
 
         this.App.get('/', (_, res: any) => res.json({ Status: 'OK', Message: `${process.Description} ${process.Version}`, Data: null }));
 
@@ -101,19 +92,17 @@ export default class Express{
             const res = _res as RouteResponse;
             if(err instanceof SyntaxError || err?.status == 400 && 'body' in err){
                 res.FAIL('400 Bad Request');
-                return;
+                return
             }
 
-            Logger.Error(Logger.Type.Express, 'An error occurred while handling the request:', Error);
-            res.InternalError('500 Internal Server Error', err);
+            Logger.Error(Logger.Type.Express, 'An error occurred while handling the request:', err);
+            res.InternalError(err.message || 'Internal Server Error');
         });
         
     }
 
     private async InitRoutes(){
-        await this.LoadMiddlewares();
         await this.LoadRoutes();
-
         this.Init();
     }
 
@@ -127,19 +116,6 @@ export default class Express{
                 Resolve();
             });
         });
-    }
-
-    private async LoadMiddlewares(){
-        Logger.Debug(Logger.Type.Express, 'Loading middlewares...');
-
-        for(const FilePath of Utils.ReadDirRecursive(path.join(__dirname, 'Middlewares'))){
-            const Middleware: ExpressMiddleware = new (require(FilePath)).default(this);
-            const FileName = path.parse(FilePath).name;
-            this.Middlewares[FileName] = Middleware;
-            Logger.Debug(Logger.Type.Express, `Loaded middleware &c${FileName}&r`);
-        }
-
-        Logger.Info(Logger.Type.Express, `Loaded middlewares (&c${Object.keys(this.Middlewares).length}&r): &c${Object.keys(this.Middlewares).join(', ')}&r`);
     }
 
     private async LoadRoutes() {

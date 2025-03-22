@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTV Server</title>
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            background: #1d1d1d;
+            color: #fafafa;
+        }
+
+        a, a:visited{
+            color: #fafafa;
+        }
+    </style>
+</head>
+<body>
+    <h1>IPTV Server</h1>
+
+    <form method="post" action="/?reset_channels=true">
+        <input type="submit" value="Reset channels">
+    </form>
+
+    <form method="post" action="/?reset_session=true">
+        <input type="submit" value="Reset session">
+    </form>
+
+    <a href="/playlist">Playlist</a>
+    <a href="/epg">EPG</a>
+</body>
+</html>

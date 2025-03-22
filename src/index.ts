@@ -10,7 +10,7 @@ process.DevMode = process.argv.includes('-dev');
 process.Version = version;
 process.Description = description;
 
-if (process.DevMode) {
+if(process.DevMode){
     process.Version += '-dev';
 
     Object.keys(process.env).forEach(Key => {
@@ -31,13 +31,13 @@ Logger.Init({
 });
 
 let Exiting = false;
-const Shutdown = async (Code: number) => {
+const Shutdown = async (code: number) => {
     if(Exiting) return;
     Exiting = true;
 
     await Bootstrapper.Stop();
-    Logger.Info(Logger.Type.Application, `Exiting with code &c${Code}&r...`);
-    process.exit(Code);
+    Logger.Info(Logger.Type.Application, `Exiting with code &c${code}&r...`);
+    process.exit(code);
 };
 
 // Error handling
@@ -45,7 +45,7 @@ process.on('uncaughtException', Error => Logger.Error(Logger.Type.Application, '
 process.on('unhandledRejection', Reason => Logger.Error(Logger.Type.Application, 'An unhandled promise rejection occured, error:', Reason));
 
 // do something when app is closing
-process.on('exit', (Code) => Shutdown(Code));
+process.on('exit', code => Shutdown(code));
 
 // catches ctrl+c event
 process.on('SIGINT', () => Shutdown(0));
