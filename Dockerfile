@@ -13,7 +13,7 @@ COPY package.json package-lock.json tsconfig.json /app/
 RUN npm run build
 
 # Remove development dependencies
-RUN npm prune --production \
+RUN npm prune --omit=dev \
     && rm -rf /app/src \
     && rm -rf /app/tsconfig.json
 
