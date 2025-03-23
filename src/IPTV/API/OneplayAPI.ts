@@ -34,12 +34,14 @@ export default class OneplayAPI{
         ContentPlay: `${this.Url.HttpApi}/content.play`
     };
 
-    public static Headers: Record<string, string> = {
-        'accept-encoding': 'gzip',
-        'accept': '*/*',
-        'content-type': 'application/json;charset=UTF-8',
-        'user-agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0'
-    };
+    public static get Headers(): Record<string, string>{
+        return {
+            'accept-encoding': 'gzip',
+            'accept': '*/*',
+            'content-type': 'application/json;charset=UTF-8',
+            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0'
+        };
+    }
 
     public static get GeneralBody(){
         return {
@@ -81,6 +83,7 @@ export default class OneplayAPI{
                 Headers['authorization'] = `Bearer ${Token}`;
             }
 
+            Logger.Debug(Logger.Type.IPTV, 'Calling API:', Route);
             await HTTP.Post(Route, {
                 ...this.GeneralBody,
                 ...Body,
@@ -93,15 +96,21 @@ export default class OneplayAPI{
             });
 
             return await new Promise<OneplayWSDataResponse>((Resolve, Reject) => {
+                Logger.Debug(Logger.Type.IPTV, 'Waiting for response from WebSocket for requestId:', requestId);
                 const ResponseTimeout = setTimeout(() => {
                     Socket.close();
-                    return Reject('Timeout while waiting for response from WebSocket');
+                    return Reject(`Failed to get response from WebSocket for requestId: ${requestId}`);
                 }, this.WS_TIMEOUT);
 
-                Socket.once('json', (x: OneplayWSResponse) => {
-                    if(x?.response?.result?.status != 'Ok' || x?.response?.context?.requestId != requestId){
-                        Logger.Error(Logger.Type.IPTV, 'Invalid response from WebSocket:', x);
-                        return Reject('Invalid response from WebSocket');
+                Socket.on('json', (x: OneplayWSResponse) => {
+                    if(x?.response?.context?.requestId != requestId){
+                        return;
+                    }
+
+                    Logger.Debug(Logger.Type.IPTV, 'Received response for requestId:', requestId);
+                    if(x?.response?.result?.status != 'Ok'){
+                        Logger.Error(Logger.Type.IPTV, 'Response status not OK:', x);
+                        return Reject('Response status not OK');
                     }
                     
                     clearTimeout(ResponseTimeout);
@@ -121,7 +130,7 @@ export default class OneplayAPI{
     public static ConnectToWebSocket = (ClientId: string) => new Promise<ws>((Resolve, Reject) => {
         try{
             const Socket = new ws(`${this.Url.WS}/${ClientId}`);
-            Logger.Trace(Logger.Type.IPTV, 'Connecting to WebSocket:', Socket.url);
+            Logger.Debug(Logger.Type.IPTV, 'Connecting to WebSocket:', Socket.url);
 
             Socket.on('message', (Data) => {
                 try{
@@ -135,7 +144,7 @@ export default class OneplayAPI{
             });
 
             Socket.on('open', () => {
-                Logger.Trace(Logger.Type.IPTV, 'Connected to WebSocket');
+                Logger.Debug(Logger.Type.IPTV, 'Connected to WebSocket');
                 return Resolve(Socket);
             });
         }catch(err: any){
