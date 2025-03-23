@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import ExpressRoute from '../Models/ExpressRoute';
 import Express from '../Express';
 
@@ -14,7 +16,7 @@ export default class extends ExpressRoute{
     public Routes: RouteHandler[]|undefined = [{
         name: '',
         method: 'GET',
-        run: async (req, res) => res.sendFile(`./src/Express/Views/index.html`, { root: process.cwd() })
+        run: (req, res) => res.sendFile(path.resolve(__dirname, '../Views/index.html'))
     },{
         name: '',
         method: 'POST',

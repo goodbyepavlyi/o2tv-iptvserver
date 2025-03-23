@@ -12,6 +12,9 @@ COPY package.json package-lock.json tsconfig.json /app/
 # Build the TypeScript project
 RUN npm run build
 
+# Copy static files (HTML) after TypeScript compilation
+RUN mkdir -p /app/dist/src/Express/Views && cp -r /app/src/Express/Views/*.html /app/dist/src/Express/Views/
+
 # Remove development dependencies
 RUN npm prune --omit=dev \
     && rm -rf /app/src \
