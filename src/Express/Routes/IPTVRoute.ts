@@ -15,9 +15,9 @@ export default class extends ExpressRoute{
         this.IPTVController = IPTVController.Instance;
     }
 
-    private GenerateM3UPlaylistEntry = (Channel: IPTVChannel|IPTVMDChannel) => [
+    private GenerateM3UPlaylistEntry = (Channel: IPTVChannel|IPTVMDChannel, extension: string = 'mpd') => [
         `#EXTINF:-1 provider="${this.IPTVController?.Provider?.ProviderType || 'unknown'}" catchup="append" catchup-days="7" catchup-source="?start_ts={utc}&end_ts={utcend}" url-tvg="${process.env.EXPRESS_URL}/epg" tvg-chno="${Channel.Number}" tvg-logo="${Channel.Logo}",${Channel.Name}`,
-        `${process.env.EXPRESS_URL}/play/${Channel.Id}.m3u8`
+        `${process.env.EXPRESS_URL}/play/${Channel.Id}.${extension}`
     ].join('\n');
 
     public Routes: RouteHandler[]|undefined = [{
@@ -36,7 +36,7 @@ export default class extends ExpressRoute{
             return this.IPTVController.GetChannels()
                 .then(x => {
                     for(const Channel of x){
-                        Playlist.push(this.GenerateM3UPlaylistEntry(Channel));
+                        Playlist.push(this.GenerateM3UPlaylistEntry(Channel, req.query.ext as string));
                     }
         
                     return res.set({
