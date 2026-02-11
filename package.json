@@ -10,7 +10,7 @@
         "dev": "nodemon -w ./src -e ts -x tsx src/index.ts -dev"
     },
     "dependencies": {
-        "axios": "^1.8.4",
+        "axios": "^1.13.5",
         "dotenv": "^16.4.7",
         "express": "^4.21.2",
         "tsx": "^4.19.3",
