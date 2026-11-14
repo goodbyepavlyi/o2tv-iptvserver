@@ -12,7 +12,7 @@ export default class OneplayAPI{
     public static WS_TIMEOUT = 20000;
 
     public static Url = {
-        HttpApi: 'https://http.cms.jyxo.cz/api/v3',
+        HttpApi: 'https://http.cms.jyxo.cz/api/v1.12',
         WS: 'wss://ws.cms.jyxo.cz/websocket'
     };
 
@@ -47,7 +47,7 @@ export default class OneplayAPI{
         return {
             deviceInfo: {
                 deviceType: 'web',
-                appVersion: '1.0.18',
+                appVersion: 'R12.26',
                 deviceManufacturer: 'Unknown',
                 deviceOs: 'Linux'
             },
@@ -78,22 +78,40 @@ export default class OneplayAPI{
                 });
             });
 
-            const Headers = this.Headers;
+            const Headers: Record<string, string> = {
+                ...this.Headers,
+                'x-appversion': 'R12.26',
+                'x-devicetype': 'web',
+                'x-devicemodel': 'WEB',
+                'x-deviceos': 'Linux',
+                'x-devicemanufacturer': 'Unknown',
+                'x-clientid': clientId,
+                'x-sessionid': sessionId,
+                'x-serverid': serverId,
+                'x-requestid': requestId
+            };
+
             if(Token){
                 Headers['authorization'] = `Bearer ${Token}`;
             }
 
             Logger.Debug(Logger.Type.IPTV, 'Calling API:', Route);
-            await HTTP.Post(Route, {
+            const httpRes: any = await HTTP.Post(Route, {
                 ...this.GeneralBody,
                 ...Body,
                 context: { requestId, clientId, sessionId, serverId }
-            }, Headers).then((res: any) => {
-                const data = res as OneplayAPIResponse;
-                if(!data.result || data.result.status != 'OkAsync'){
-                    throw data;
-                }
-            });
+            }, Headers);
+
+            if(!httpRes?.result || (httpRes.result.status !== 'Ok' && httpRes.result.status !== 'OkAsync')){
+                Socket.close();
+                throw httpRes;
+            }
+
+            if(httpRes.result.status === 'Ok'){
+                Socket.close();
+                if(httpRes.data?.err) throw httpRes.data.err;
+                return httpRes.data;
+            }
 
             return await new Promise<OneplayWSDataResponse>((Resolve, Reject) => {
                 Logger.Debug(Logger.Type.IPTV, 'Waiting for response from WebSocket for requestId:', requestId);
@@ -171,16 +189,23 @@ export default class OneplayAPI{
             return res.step;
         });
 
-        const DeviceId = LoginStep.currentUser.currentDevice.id;
+        const DeviceId = LoginStep?.currentUser?.currentDevice?.id;
 
-        // Change current session's device name
-        await this.RenameDevice(LoginStep.bearerToken, DeviceId, process.env.PROVIDER_ONEPLAY_DEVICE_NAME);
-        
-        // Remove old devices with the same device name
-        const Devices = await this.GetDevices(LoginStep.bearerToken);
-        for(const Device of Devices.filter(x => x.id != DeviceId && x.name == process.env.PROVIDER_ONEPLAY_DEVICE_NAME)){
-            Logger.Info(Logger.Type.IPTV, `ONEPLAY => Removing old device ${Device.name} (${Device.id})`);
-            await this.RemoveDevice(LoginStep.bearerToken, Device.id);
+        if(process.env.PROVIDER_ONEPLAY_DEVICE_NAME && process.env.PROVIDER_ONEPLAY_DEVICE_NAME !== 'change_me'){
+            if(DeviceId){
+                await this.RenameDevice(LoginStep.bearerToken, DeviceId, process.env.PROVIDER_ONEPLAY_DEVICE_NAME)
+                    .catch(err => Logger.Warn(Logger.Type.IPTV, 'Failed to rename device:', err));
+            }
+
+            try{
+                const Devices = await this.GetDevices(LoginStep.bearerToken);
+                for(const Device of Devices.filter(x => x.id != DeviceId && x.name == process.env.PROVIDER_ONEPLAY_DEVICE_NAME)){
+                    Logger.Info(Logger.Type.IPTV, `ONEPLAY => Removing old device ${Device.name} (${Device.id})`);
+                    await this.RemoveDevice(LoginStep.bearerToken, Device.id).catch(err => Logger.Warn(Logger.Type.IPTV, 'Failed to remove old device:', err));
+                }
+            }catch(err: any){
+                Logger.Warn(Logger.Type.IPTV, 'Failed to manage devices:', err?.message || err);
+            }
         }
 
         return LoginStep.bearerToken;
@@ -192,11 +217,8 @@ export default class OneplayAPI{
             screen: 'devices'
         }
     }, Token).then(res => {
-        if(!res?.screen?.userDevices){
-            throw new Error('Invalid screen devices response');
-        }
-
-        return res.screen.userDevices.devices;
+        const devices = res?.screen?.userDevices?.devices ?? res?.userDevices?.devices ?? res?.screen?.devices ?? [];
+        return devices;
     });
 
     public static RenameDevice = (Token: string, DeviceId: string, Name: string) => this.Post(this.Routes.UserDeviceChange, {
@@ -475,9 +497,10 @@ export default class OneplayAPI{
 
 interface OneplayAPIResponse{
     result:{
-        status: 'OkAsync';
-        schema: 'OkResultAsync';
-    }
+        status: 'Ok' | 'OkAsync';
+        schema: string;
+    };
+    data?: any;
     context:{
         requestId: string;
         clientId: string;
