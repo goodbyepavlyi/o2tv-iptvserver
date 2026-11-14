@@ -1,7 +1,7 @@
 {
     "name": "o2tv-iptvserver",
     "description": "O2TV IPTV Server",
-    "version": "3.2.0",
+    "version": "3.2.1",
     "author": "goodbyepavlyi",
     "license": "MIT",
     "scripts": {
@@ -18,7 +18,7 @@
         "xml2js": "^0.6.2"
     },
     "devDependencies": {
-        "@types/express": "^5.0.1",
+        "@types/express": "^4.17.25",
         "@types/ws": "^8.18.0",
         "nodemon": "^3.1.9",
         "typescript": "^5.8.2"
